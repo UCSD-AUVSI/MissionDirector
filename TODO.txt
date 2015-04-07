@@ -1,7 +1,11 @@
 	
 	- Add GUI for human operator
 	
-	- Add connection to plane for SRIC task
+	- Add connection to plane for SRIC task (see PlaneOBC in Clients folder)
 		the plane should be another client connected over the WIFI link
 		the plane then needs to run that remote listener client
 		this onboard listener will do SRIC and in the future could do gimbal control
+	
+	- Use MissionDirector states to produce HTTP messages for judges
+	- See MissionDirector/MissionDirector.py which has its own list of TODO's
+	

@@ -7,7 +7,7 @@ import MissionDirector
 
 
 #-----------------------------------------------------------
-# Manage messages from MAVProxy's "cbrain" module
+# Manage messages from MAVProxy's "mdlink" module
 #
 def callback(data):
 	print "received message from MAVProxy: \"" + str(data) + "\""

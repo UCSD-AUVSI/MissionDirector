@@ -3,7 +3,8 @@
 #
 
 import MissionDirector
-from Clients import MAVProxyC
+from Networking.send_message_to_client import send_message_to_client
+from Networking import ports
 
 
 #-----------------------------------------------------------------------------
@@ -17,8 +18,22 @@ def callback(data):
 	# If message starts with "mavproxy:", forward to MAVProxy
 	#
 	if len(datastr) > 10 and datastr[:9] == "mavproxy:":
-		MAVProxyC.send_to_mdlink.send_msg(datastr[9:])
-		print "sent message to MAVProxy mdlink"
+		send_message_to_client(datastr[9:], ports.outport_MAVProxy)
+		print "forwarded message from HumanOperator to MAVProxy mdlink"
+	
+	#--------------------------------------------------------------------------
+	# If message starts with "heimdall:", forward to Heimdall
+	#
+	if len(datastr) > 10 and datastr[:9] == "heimdall:":
+		send_message_to_client(datastr[9:], ports.outport_Heimdall)
+		print "forwarded message from HumanOperator to Heimdall"
+	
+	#--------------------------------------------------------------------------
+	# If message starts with "planeobc:", forward to PlaneOBC
+	#
+	if len(datastr) > 10 and datastr[:9] == "planeobc:":
+		send_message_to_client(datastr[9:], ports.outport_PlaneOBC)
+		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------
 	# Todo: other types of messages/commands that a human operator might want to send

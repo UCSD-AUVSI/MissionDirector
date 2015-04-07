@@ -4,7 +4,8 @@
 
 listenport_HumanOperator  = 9980
 
-listenport_Heimdall = 9981
+listenport_Heimdall = 9981  #messages received FROM Heimdall TO MissionDirector
+outport_Heimdall = 9986     #for messages sent FROM MissionDirector TO Heimdall
 
 listenport_MAVProxy = 9982  #messages received FROM MAVProxy TO MissionDirector
 outport_MAVProxy = 9983     #for messages sent FROM MissionDirector TO MAVProxy
