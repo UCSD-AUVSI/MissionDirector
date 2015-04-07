@@ -1,0 +1,7 @@
+	
+	- Add GUI for human operator
+	
+	- Add connection to plane for SRIC task
+		the plane should be another client connected over the WIFI link
+		the plane then needs to run that remote listener client
+		this onboard listener will do SRIC and in the future could do gimbal control
