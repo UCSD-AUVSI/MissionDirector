@@ -4,6 +4,7 @@
 #
 
 import select, socket, sys, time, threading
+import json
 
 
 #-------------------------------------------------------------------
@@ -79,6 +80,8 @@ def start_port_listener(port, callback, keep_running_until_interrupt):
 				data = clientsocket.recv(1024)
 				if not data: break
 				#print "port "+str(port)+" received data from client: \"" + str(data) + "\""
+				
+				# turn json string into dictionary
 				callback(data)
 			
 			clientsocket.close()

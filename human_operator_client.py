@@ -1,11 +1,12 @@
 import socket, time, sys
-
+import json
 #------------------------------------------------------
 # get arguments
 #
 try:
 	port = int(sys.argv[1])
-	msg = str(sys.argv[2])
+	# pass in json string
+	msg =  sys.argv[2]
 except:
 	print "usage:  [client-port]  [value-to-send]"
 	sys.exit(0)
