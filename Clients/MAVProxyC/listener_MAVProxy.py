@@ -5,7 +5,7 @@ from Networking import ports
 
 
 #-----------------------------------------------------------
-# Manage messages from MAVProxy's "mdlink" module
+# Manage messages from MAVProxy's "mdlink" module, which currently does not use JSON
 #
 def callback(data):
 	print "received message from MAVProxy: \"" + str(data) + "\""

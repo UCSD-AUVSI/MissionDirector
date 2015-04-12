@@ -13,27 +13,34 @@ import json
 #
 def callback(data):
 	print "received message from human operator: \"" + str(data) + "\""
+	
+	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
 	command = json_data["command"]
-	json_data = json_data["send"]
+	args = json_data["args"]
+	
 	#--------------------------------------------------------------------------
-	# If message starts with "mavproxy:", forward to MAVProxy
+	# If command is "mavproxy:", forward argument "message" to MAVProxy
 	#
-	if command == "mavproxy":
-		send_message_to_client(json.dumps(json_data), ports.outport_MAVProxy)
+	if command == "mavproxy:":
+		msg = args["message"]
+		send_message_to_client(json.dumps(msg), ports.outport_MAVProxy)
 		print "forwarded message from HumanOperator to MAVProxy mdlink"
+	
 	#--------------------------------------------------------------------------
-	# If message starts with "heimdall:", forward to Heimdall
+	# If command is "heimdall:", forward argument "message" to Heimdall
 	#
-	if command == "heimdall":
-		send_message_to_client(json.dumps(json_data), ports.outport_Heimdall)
+	if command == "heimdall:":
+		msg = args["message"]
+		send_message_to_client(json.dumps(msg), ports.outport_Heimdall)
 		print "forwarded message from HumanOperator to Heimdall"
 	
 	#--------------------------------------------------------------------------
-	# If message starts with "planeobc:", forward to PlaneOBC
+	# If message starts with "planeobc:", forward argument "message" to PlaneOBC
 	#
-	if command == "planeobc":
-		send_message_to_client(json.dumps(json_data), ports.outport_PlaneOBC)
+	if command == "planeobc:":
+		msg = args["message"]
+		send_message_to_client(json.dumps(msg), ports.outport_PlaneOBC)
 		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------
