@@ -13,38 +13,36 @@ import time
 # Callback to process an incoming message or command from the human operator
 #
 def callback(data):
+	print "received message from human operator: \"" + str(data) + "\""
+	
+	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
-	redirect = json_data["redirect"]
-
-	print "\nreceived "+redirect +" message from HumanOperator"
-	print json_data
-
+	command = json_data["command"]
+	args = json_data["args"]
+	
 	#--------------------------------------------------------------------------
-	# If message starts with "mavproxy:", forward to MAVProxy
+	# If command is "mavproxy:", forward argument "message" to MAVProxy
 	#
-	if redirect == "mavproxy":
-		send_message_to_client(json.dumps(json_data), ports.outport_MAVProxy)
+	if command == "mavproxy:":
+		msg = args["message"]
+		send_message_to_client(msg, ports.outport_MAVProxy)
 		print "forwarded message from HumanOperator to MAVProxy mdlink"
+	
 	#--------------------------------------------------------------------------
-	# If message starts with "heimdall:", forward to Heimdall
+	# If command is "heimdall:", forward argument "message" to Heimdall
 	#
-	if redirect == "heimdall":
-		send_message_to_client(json.dumps(json_data), ports.outport_Heimdall)
+	if command == "heimdall:":
+		msg = args["message"]
+		send_message_to_client(msg, ports.outport_Heimdall)
 		print "forwarded message from HumanOperator to Heimdall"
 	
 	#--------------------------------------------------------------------------
-	# If message starts with "planeobc:", forward to PlaneOBC
+	# If message starts with "planeobc:", forward argument "message" to PlaneOBC
 	#
-	if redirect == "planeobc":
-		json_data={}
-		json_data["username"] = "test"
-		json_data["password"] = "test"
-		json_data["ip"] = "test"
-		json_data["subnet"] = "test"
-		json_data["folder"] = "test"
-		json_data["command"] = "start"
-		time.sleep(10)
-		send_message_to_client(json.dumps(json_data), ports.outport_PlaneOBC)
+
+	if command == "planeobc:":
+		msg = args["message"]
+		send_message_to_client(msg, ports.outport_PlaneOBC)
 		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------

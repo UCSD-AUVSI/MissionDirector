@@ -9,21 +9,20 @@ import time
 # todo: handle messages from PlaneOBC
 #
 def callback(data):
+
+	print "received message from PlaneOBC: \"" + str(data) + "\""
+	
+	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
 	command = json_data["command"]
-
-	print "\nreceived "+command +" message from PlaneOBC"
-	print json_data
-
-
+	args = json_data["args"]
+	
 	if command == "save_credentials":
-		time.sleep(10)
-
-		username = json_data["username"]
-		password = json_data["password"]
-
+		username = args["username"]
+		password = args["password"]
+		
 		#save username and password in file
-
+		
 		# call Heimdall function to get highest image
 		msg = {}
 		msg["command"] = "get_top_filename"

@@ -9,3 +9,5 @@
 	- Use MissionDirector states to produce HTTP messages for judges
 	- See MissionDirector/MissionDirector.py which has its own list of TODO's
 	
+	- define JSON message formatting (what are the common keys in the python dictionaries)
+	
