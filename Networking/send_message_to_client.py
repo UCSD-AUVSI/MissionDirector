@@ -11,7 +11,7 @@ def send_message_to_client(msg, port, IPaddr="localhost"):
 	#thread.daemon = True
 	#thread.start()
 	
-	# Send message using the main thread (TCP may freeze)
+	# Send message using the main thread (TCP may cause a freeze if connection is bad)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((IPaddr,port))
 	s.send(msg)
