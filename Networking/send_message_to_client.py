@@ -1,8 +1,6 @@
 import socket, threading
 import json
 
-#todo: don't always send to "localhost"
-
 
 def send_message_to_client(msg, port, IPaddr="localhost"):
 	
