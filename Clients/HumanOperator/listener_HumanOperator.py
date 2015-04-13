@@ -24,7 +24,7 @@ def callback(data):
 	#
 	if command == "mavproxy:":
 		msg = args["message"]
-		send_message_to_client(json.dumps(msg), ports.outport_MAVProxy)
+		send_message_to_client(msg, ports.outport_MAVProxy)
 		print "forwarded message from HumanOperator to MAVProxy mdlink"
 	
 	#--------------------------------------------------------------------------
@@ -32,7 +32,7 @@ def callback(data):
 	#
 	if command == "heimdall:":
 		msg = args["message"]
-		send_message_to_client(json.dumps(msg), ports.outport_Heimdall)
+		send_message_to_client(msg, ports.outport_Heimdall)
 		print "forwarded message from HumanOperator to Heimdall"
 	
 	#--------------------------------------------------------------------------
@@ -40,7 +40,7 @@ def callback(data):
 	#
 	if command == "planeobc:":
 		msg = args["message"]
-		send_message_to_client(json.dumps(msg), ports.outport_PlaneOBC)
+		send_message_to_client(msg, ports.outport_PlaneOBC)
 		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------
