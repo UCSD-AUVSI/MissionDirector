@@ -1,11 +1,15 @@
 
 import MissionDirector
+from Networking.send_message_to_client import send_message_to_client
+from Networking import ports
 import json
+import time
 
 #-----------------------------------------------------------
 # todo: handle messages from PlaneOBC
 #
 def callback(data):
+
 	print "received message from PlaneOBC: \"" + str(data) + "\""
 	
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
@@ -22,7 +26,13 @@ def callback(data):
 		# call Heimdall function to get highest image
 		msg = {}
 		msg["command"] = "get_top_filename"
+
 		send_message_to_client(json.dumps(msg),ports.outport_Heimdall)
+		print "forwarded message from MissionDirector to Heimdall"
+
+	elif command == "uploaded_image":
+		print "Done, Image was uploaded"
+
 
 
 
