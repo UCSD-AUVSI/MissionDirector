@@ -12,7 +12,7 @@ def startImaging():
 	
 	fwdmsg = {}
 	fwdmsg["command"] = "planeobc:"
-	fwdmsg["args"] = {"message":json.dumps(remotemsg)}
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":"10.42.0.69"}
 	
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
 
@@ -23,7 +23,7 @@ def stopImaging():
 	
 	fwdmsg = {}
 	fwdmsg["command"] = "planeobc:"
-	fwdmsg["args"] = {"message":json.dumps(remotemsg)}
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":"10.42.0.69"}
 	
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
 

@@ -21,7 +21,7 @@ def main(argv):
 	
 	# Start server and wait here for keyboard interrupt
 	s = server_multiport.server()
-	s.start(ports_and_callbacks, True)
+	s.start(ports_and_callbacks, "localhost", True)
 
 
 #-----------------------------------------------------------

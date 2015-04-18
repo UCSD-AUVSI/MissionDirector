@@ -40,7 +40,8 @@ def callback(data):
 	#
 	if command == "planeobc:":
 		msg = args["message"]
-		send_message_to_client(msg, ports.outport_PlaneOBC)
+		ipaddr = args["ip"]
+		send_message_to_client(msg, ports.outport_PlaneOBC, IPaddr=ipaddr)
 		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------

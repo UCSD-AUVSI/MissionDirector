@@ -12,6 +12,11 @@ TODO: Graphic image of the gimbal angle
 from Tkinter import * 
 import tkMessageBox
 
+# import MissionDirector networking stuff
+from Networking.send_message_to_client import send_message_to_client
+from Networking import ports
+import json
+
 #To initialize Tkinter, need to create a Tk root widget, 
 #which is a window with a title bar and other decoration provided by window manager
 #root widget has to be created before any other widgets and can only be one root widget
@@ -24,6 +29,17 @@ def confirmBeginImaging():
 	if result == 'yes':
 		print "Beginning imaging..."
 		#put method calls here
+		
+		remotemsg = {}
+		remotemsg["command"] = "imaging"
+		remotemsg["args"] = {"do":"start"}
+	
+		fwdmsg = {}
+		fwdmsg["command"] = "planeobc:"
+		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":"10.42.0.69"}
+	
+		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
+
 	else:
 		print "Did not start imaging"
 			
@@ -33,6 +49,17 @@ def confirmStopImaging():
 	if result == 'yes':
 		print "Stopping imaging"
 		#put method calls here
+		
+		remotemsg = {}
+		remotemsg["command"] = "imaging"
+		remotemsg["args"] = {"do":"stop"}
+	
+		fwdmsg = {}
+		fwdmsg["command"] = "planeobc:"
+		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":"10.42.0.69"}
+	
+		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
+		
 	else:
 		print "Did not stop imaging"
 

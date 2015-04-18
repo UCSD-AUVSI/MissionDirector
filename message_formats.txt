@@ -1,7 +1,7 @@
 Format 1 of 1: "command"/"args"
 ----------------------------------------------
 
-{"command":"AAA", "args":"BBB"}
+{"command":"AAA", "args":BBB}
 
 where AAA signifies the intent of the message (what you want to command the remote entity to do)
 BBB is another dictionary containing extra arguments / data that the remote entity will need to carry out that command

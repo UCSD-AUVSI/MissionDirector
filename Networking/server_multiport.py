@@ -45,7 +45,7 @@ class server:
 				thread.start()
 			
 			print "Server is listening!"
-		
+			
 			if wait_for_interrupt:
 				try:
 					while True:
