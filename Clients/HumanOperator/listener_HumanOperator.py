@@ -6,6 +6,7 @@ import MissionDirector
 from Networking.send_message_to_client import send_message_to_client
 from Networking import ports
 import json
+import time
 
 
 #-----------------------------------------------------------------------------
@@ -38,9 +39,11 @@ def callback(data):
 	#--------------------------------------------------------------------------
 	# If message starts with "planeobc:", forward argument "message" to PlaneOBC
 	#
+
 	if command == "planeobc:":
 		msg = args["message"]
-		send_message_to_client(msg, ports.outport_PlaneOBC)
+		ipaddr = args["ip"]
+		send_message_to_client(msg, ports.outport_PlaneOBC, IPaddr=ipaddr)
 		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------
