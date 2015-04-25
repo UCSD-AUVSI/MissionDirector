@@ -123,7 +123,7 @@ def confirmBeginImaging():
 		remotemsg["args"] = {"do":"start"}
 		fwdmsg = {}
 		fwdmsg["command"] = "planeobc:"
-		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":"10.42.0.69"}
+		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
 	else:
 		print "Did not start imaging"
@@ -138,7 +138,7 @@ def confirmStopImaging():
 		remotemsg["args"] = {"do":"stop"}
 		fwdmsg = {}
 		fwdmsg["command"] = "planeobc:"
-		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":"10.42.0.69"}
+		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
 	else:
 		print "Did not stop imaging"
