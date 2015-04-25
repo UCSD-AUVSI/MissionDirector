@@ -4,7 +4,6 @@
 #
 
 import select, socket, sys, time, threading
-import json
 
 
 #-------------------------------------------------------------------
@@ -30,7 +29,7 @@ class server:
 		print "Server done shutting down."
 		self.readytostart = True
 	
-	def start(self, ports_and_callbacks, wait_for_interrupt):
+	def start(self, ports_and_callbacks, ipv4address, wait_for_interrupt):
 		
 		if self.readytostart == True:
 			self.readytostart = False
@@ -40,7 +39,7 @@ class server:
 			
 			self.threads = []
 			for port_and_callback in ports_and_callbacks:
-				self.threads.append(threading.Thread(target=start_port_listener, args=(port_and_callback[0], port_and_callback[1], self.keep_running)))
+				self.threads.append(threading.Thread(target=start_port_listener, args=(port_and_callback[0], port_and_callback[1], ipv4address, self.keep_running)))
 			for thread in self.threads:
 				thread.daemon = True
 				thread.start()
@@ -61,11 +60,13 @@ class server:
 # Listen on one port (don't use this outside this file)
 # When a message is received, give it to the callback
 #
-def start_port_listener(port, callback, keep_running_until_interrupt):
+def start_port_listener(port, callback, ipv4address, keep_running_until_interrupt):
 	
 	listensocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	listensocket.bind(("localhost", port))
+	listensocket.bind((ipv4address, port))
 	listensocket.listen(0) # 0 for debugging; 3-5 for release version
+	
+	print("socket bound for listening on port "+str(port))
 	
 	while keep_running_until_interrupt.is_set():
 		
@@ -80,12 +81,11 @@ def start_port_listener(port, callback, keep_running_until_interrupt):
 				data = clientsocket.recv(1024)
 				if not data: break
 				#print "port "+str(port)+" received data from client: \"" + str(data) + "\""
-				
-				# turn json string into dictionary
 				callback(data)
 			
 			clientsocket.close()
 	
 	listensocket.close()
 	print "Socket on port "+str(port)+" closed!"
+
 
