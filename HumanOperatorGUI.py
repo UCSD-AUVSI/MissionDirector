@@ -25,12 +25,10 @@ import json
 root = Tk()
 
 def missionDirectorIPConnect():
-	someVar = mDIPAVar.get()
-	if(someVar == ""):
-		print"Please enter something"
-	else:
-		#Put method call here
-		print "Currently connected to:", someVar
+	hellomsg = {}
+	hellomsg["command"] = "hello"
+	hellomsg["args"] = "a"
+	send_message_to_client(json.dumps(hellomsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def missionDirectorSend():
 	someVar = missionDirectorVar.get()
@@ -41,20 +39,28 @@ def missionDirectorSend():
 		print "Message to mission director: ", someVar
 
 def planeOBCIPConnect():
-	someVar = planeOBCIPVar.get()
-	if(someVar == ""):
-		print"Please enter something"
-	else:	
-		#Put method call here
-		print "Currently connected to: ", someVar
+	#todo: update gui when a reply is received?
+	remotemsg = {}
+	remotemsg["command"] = "hello"
+	remotemsg["args"] = "a"
+	fwdmsg = {}
+	fwdmsg["command"] = "planeobc:"
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def planeOBCSend():
 	someVar = planeOBCVar.get()
 	if(someVar == ""):
 		print"Please enter something"
 	else:
-		#Put method call here
-		print "Message to plane OBC: ", someVar
+		remotemsg = {}
+		remotemsg["command"] = someVar
+		remotemsg["args"] = {"a":"a"}
+		fwdmsg = {}
+		fwdmsg["command"] = "planeobc:"
+		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
+		print "Sent command (WITH NO ARGS) to plane OBC: ", someVar
 
 def heimdallIPConnect():
 	someVar = heimdallIPVar.get()
@@ -124,7 +130,7 @@ def confirmBeginImaging():
 		fwdmsg = {}
 		fwdmsg["command"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
-		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
+		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 	else:
 		print "Did not start imaging"
 			
@@ -139,7 +145,7 @@ def confirmStopImaging():
 		fwdmsg = {}
 		fwdmsg["command"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
-		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator)
+		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 	else:
 		print "Did not stop imaging"
 

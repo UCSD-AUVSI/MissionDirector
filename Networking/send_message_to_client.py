@@ -2,7 +2,7 @@ import socket, threading
 import json
 
 
-def send_message_to_client(msg, port, IPaddr="localhost"):
+def send_message_to_client(msg, port, IPaddr):
 	
 	# Use this to dispatch the message to another thread so the main thread can't freeze
 	# thread = threading.Thread(target=private___dispatch_msg, args=(msg))
