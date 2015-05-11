@@ -12,13 +12,18 @@ import time
 #-----------------------------------------------------------------------------
 # Callback to process an incoming message or command from the human operator
 #
-def callback(data):
+def callback(data, FromIPaddr):
 	print "received message from human operator: \"" + str(data) + "\""
+	ports.IPaddr_HumanOperator = FromIPaddr
 	
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
 	cmd = json_data["cmd"]
 	args = json_data["args"]
+	
+	if cmd == "status":
+		if "hello" in args:
+			send_message_to_client(json.dumps({"cmd":"status","args":{"from":"MissionDirector","message":"hello-reply"}}), ports.outport_HumanOperator, FromIPaddr)
 	
 	#--------------------------------------------------------------------------
 	# If command is "mavproxy:", forward argument "message" to MAVProxy
@@ -26,7 +31,9 @@ def callback(data):
 	if cmd == "mavproxy:":
 		print("forwarding message from HumanOperator to MAVProxy mdlink")
 		msg = args["message"]
-		send_message_to_client(msg, ports.outport_MAVProxy)
+		ipaddr = args["ip"]
+		ports.IPaddr_MAVProxy = ipaddr
+		send_message_to_client(msg, ports.outport_MAVProxy, IPaddr=ipaddr)
 	
 	#--------------------------------------------------------------------------
 	# If command is "heimdall:", forward argument "message" to Heimdall
@@ -34,7 +41,9 @@ def callback(data):
 	if cmd == "heimdall:":
 		print("forwarding message from HumanOperator to Heimdall")
 		msg = args["message"]
-		send_message_to_client(msg, ports.outport_Heimdall)
+		ipaddr = args["ip"]
+		ports.IPaddr_Heimdall = ipaddr
+		send_message_to_client(msg, ports.outport_Heimdall, IPaddr=ipaddr)
 	
 	#--------------------------------------------------------------------------
 	# If message starts with "planeobc:", forward argument "message" to PlaneOBC
@@ -44,6 +53,7 @@ def callback(data):
 		print("forwarding message from HumanOperator to PlaneOBC")
 		msg = args["message"]
 		ipaddr = args["ip"]
+		ports.IPaddr_PlaneOBC = ipaddr
 		send_message_to_client(msg, ports.outport_PlaneOBC, IPaddr=ipaddr)
 	
 	#--------------------------------------------------------------------------

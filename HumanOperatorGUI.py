@@ -18,6 +18,36 @@ import tkMessageBox
 from Networking.send_message_to_client import send_message_to_client
 from Networking import ports
 import json
+import threading, time
+from Networking import server_multiport
+ListenerToMissionDirectorServer = server_multiport.server()
+TryingToStartMissionDirectorServer = False
+
+def CallbackFromMissionDirector(data, FromIPaddr):
+	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
+	json_data = json.loads(data)
+	cmd = json_data["cmd"]
+	args = json_data["args"]
+	if cmd == "status":
+		print("Status from "+args["from"]+": "+args["message"])
+
+def ThreadedListenToMissionDirectorMainServer(ipaddr):
+	global ListenerToMissionDirectorServer
+	global TryingToStartMissionDirectorServer
+	ports_and_callbacks = [(ports.outport_HumanOperator, CallbackFromMissionDirector, False)]
+	ListenerToMissionDirectorServer.stop()
+	ListenerToMissionDirectorServer.start(ports_and_callbacks, ipaddr, False, False) # Start server in the background
+	time.sleep(1)
+	if ListenerToMissionDirectorServer.CheckAllSocketsConnected() == False:
+		TryingToStartMissionDirectorServer = False
+
+def StartListenerToMissionDirectorMainServer(ipaddr):
+	global TryingToStartMissionDirectorServer
+	if TryingToStartMissionDirectorServer == False:
+		TryingToStartMissionDirectorServer = True
+		thread = threading.Thread(target=ThreadedListenToMissionDirectorMainServer, args=(ipaddr,))
+		thread.daemon = True
+		thread.start()
 
 #To initialize Tkinter, need to create a Tk root widget, 
 #which is a window with a title bar and other decoration provided by window manager
@@ -25,18 +55,24 @@ import json
 root = Tk()
 
 def missionDirectorIPConnect():
-	hellomsg = {}
-	hellomsg["cmd"] = "status"
-	hellomsg["args"] = {"hello":"ask"}
-	send_message_to_client(json.dumps(hellomsg), ports.listenport_HumanOperator, mDIPAVar.get())
+	MDipaddr = mDIPAVar.get()
+	if len(MDipaddr) != 0:
+		StartListenerToMissionDirectorMainServer(MDipaddr)
+		hellomsg = {}
+		hellomsg["cmd"] = "status"
+		hellomsg["args"] = {"hello":"ask"}
+		send_message_to_client(json.dumps(hellomsg), ports.listenport_HumanOperator, MDipaddr)
 
 def missionDirectorSend():
-	someVar = missionDirectorVar.get()
-	if(someVar == ""):
-		print"Please enter something"
+	cmd = missionDirectorVarCMD.get()
+	args = missionDirectorVarARG.get()
+	if len(missionDirectorVarCMD) == 0:
+		print"Please enter command / args"
 	else:
-		#Put method call here
-		print "Message to mission director: ", someVar
+		mdmsg = {}
+		mdmsg["cmd"] = cmd
+		mdmsg["args"] = args
+		send_message_to_client(json.dumps(mdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def planeOBCIPConnect():
 	#todo: update gui when a reply is received?
@@ -49,33 +85,42 @@ def planeOBCIPConnect():
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def planeOBCSend():
-	someVar = planeOBCVar.get()
-	if(someVar == ""):
-		print"Please enter something"
+	cmd = planeOBCVarCMD.get()
+	args = planeOBCVarARG.get()
+	if len(cmd) == 0:
+		print"Please enter command / args"
 	else:
 		remotemsg = {}
-		remotemsg["cmd"] = someVar
-		remotemsg["args"] = {"a":"a"}
+		remotemsg["cmd"] = cmd
+		remotemsg["args"] = args
 		fwdmsg = {}
 		fwdmsg["cmd"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def heimdallIPConnect():
-	someVar = heimdallIPVar.get()
-	if(someVar == ""):
-		print"Please enter something"
-	else:
-		#Put method call here
-		print "Currently connected to: ", someVar
+	#todo: update gui when a reply is received?
+	remotemsg = {}
+	remotemsg["cmd"] = "status"
+	remotemsg["args"] = {"hello":"ask"}
+	fwdmsg = {}
+	fwdmsg["cmd"] = "heimdall:"
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":heimdallIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get()) #forward message to Heimdall through the MissionDirector
 
 def heimdallSend():
-	someVar = heimdallVar.get()
-	if(someVar == ""):
-		print"Please enter something"
+	cmd = heimdallVarCMD.get()
+	args = heimdallVarARG.get()
+	if len(cmd) == 0:
+		print"Please enter command / args"
 	else:
-		#Put method call here
-		print "Message to heimdall: ", someVar
+		remotemsg = {}
+		remotemsg["cmd"] = cmd
+		remotemsg["args"] = args
+		fwdmsg = {}
+		fwdmsg["cmd"] = "heimdall:"
+		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":heimdallIPVar.get()}
+		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def mavProxyIPConnect():
 	someVar = mavProxyIPVar.get()
@@ -172,11 +217,14 @@ def handler():
     	print "Did not end mission"
 
 mDIPAVar = StringVar()
-missionDirectorVar = StringVar()
+missionDirectorVarCMD = StringVar()
+missionDirectorVarARG = StringVar()
 planeOBCIPVar = StringVar()
-planeOBCVar = StringVar()
+planeOBCVarCMD = StringVar()
+planeOBCVarARG = StringVar()
 heimdallIPVar = StringVar()
-heimdallVar = StringVar()
+heimdallVarCMD = StringVar()
+heimdallVarARG = StringVar()
 mavProxyIPVar = StringVar()
 mavProxyVar = StringVar()
 gimbalAngleVar = StringVar()
@@ -185,9 +233,14 @@ gimbalAngleVar = StringVar()
 root.title("UCSD AUVSI Human Operator GUI")	
 root.protocol("WM_DELETE_WINDOW", handler)
 
+CommandEntryCOLUMN = 1
+ArgEntryCOLUMN = 2
+BUTTONSCOLUMN = 3
+StatusCOLUMN = 4
+
 ##Headers
 systemTitle = Label(root, text = "System", font = "bold").grid(row = 0, column = 0)
-#systemStatus = Label(root, text = "Status", width = 15, font = "bold").grid(row = 0, column = 3)
+#systemStatus = Label(root, text = "Status", width = 15, font = "bold").grid(row = 0, column = StatusCOLUMN)
 #System Names
 mDIPA = Label(root, relief = RIDGE, text = "Mission Director IP", width = 18).grid(row= 1, column = 0)
 missionDirector = Label(root, relief = RIDGE, text = "Mission Director", width = 18).grid(row=2, column = 0)
@@ -201,41 +254,44 @@ gimbalAngle = Label(root, relief = RIDGE, text = "Current Gimbal Angle", width =
 
 """
 #Status Labels
-mDIPAStatus = Label(root, text = "Not connected", width = 30).grid(row=1, column = 3)
-missionDirectorStatus = Label(root, text = "Default Status").grid(row=2, column = 3)
-planeOBCIPStatus = Label(root, text = "Not connected").grid(row=3, column = 3)
-planeOBCStatus = Label(root, text = "Default Status", width = 30).grid(row=4, column = 3)
-heimdallIPStatus = Label(root, text = "Not connected").grid(row=5, column = 3)
-heimdallStatus = Label(root, text = "Default Status").grid(row=6, column = 3)
-mavProxyIPStatus = Label(root, text = "Not connected").grid(row=7, column = 3)
-mavProxyStatus  = Label(root, text = "Default Status").grid(row=8, column = 3)
-gimbalStatus = Label(root, text = "Default Status").grid(row = 9, column = 3)
-flightStatus = Label(root, text = "Default Status").grid(row = 10, column = 3)
-imagingStatus = Label(root, text = "Default Status").grid(row = 11, column = 3)
-communicationStatus = Label(root, text = "Default Status").grid(row = 12, column = 3)
+mDIPAStatus = Label(root, text = "Not connected", width = 30).grid(row=1, column = StatusCOLUMN)
+missionDirectorStatus = Label(root, text = "Default Status").grid(row=2, column = StatusCOLUMN)
+planeOBCIPStatus = Label(root, text = "Not connected").grid(row=3, column = StatusCOLUMN)
+planeOBCStatus = Label(root, text = "Default Status", width = 30).grid(row=4, column = StatusCOLUMN)
+heimdallIPStatus = Label(root, text = "Not connected").grid(row=5, column = StatusCOLUMN)
+heimdallStatus = Label(root, text = "Default Status").grid(row=6, column = StatusCOLUMN)
+mavProxyIPStatus = Label(root, text = "Not connected").grid(row=7, column = StatusCOLUMN)
+mavProxyStatus  = Label(root, text = "Default Status").grid(row=8, column = StatusCOLUMN)
+gimbalStatus = Label(root, text = "Default Status").grid(row = 9, column = StatusCOLUMN)
+flightStatus = Label(root, text = "Default Status").grid(row = 10, column = StatusCOLUMN)
+imagingStatus = Label(root, text = "Default Status").grid(row = 11, column = StatusCOLUMN)
+communicationStatus = Label(root, text = "Default Status").grid(row = 12, column = StatusCOLUMN)
 """
 
 #####Entry fields
-mDIPAEntry = Entry(root, width = 30, textvariable = mDIPAVar).grid(row = 1, column = 1)
-missionDirectorEntry = Entry(root, width = 30, textvariable = missionDirectorVar).grid(row = 2, column = 1)
-planeOBCIPEntry = Entry(root, width = 30, textvariable = planeOBCIPVar).grid(row = 3, column = 1)
-planeOBCEntry = Entry(root, width = 30, textvariable = planeOBCVar).grid(row = 4, column = 1)
-heimdallIPEntry = Entry(root, width = 30, textvariable = heimdallIPVar).grid(row = 5, column = 1)
-heimdallEntry = Entry(root, width = 30, textvariable = heimdallVar).grid(row = 6, column = 1)
-mavProxyIPEntry = Entry(root, width = 30, textvariable = mavProxyIPVar).grid(row = 7, column = 1)
-mavProxyEntry = Entry(root, width = 30, textvariable = mavProxyVar).grid(row = 8, column = 1)
-gimbalEntry = Entry(root, width = 30, text = gimbalAngleVar).grid(row = 9, column = 1)
+mDIPAEntry = Entry(root, width = 30, textvariable = mDIPAVar).grid(row = 1, column = CommandEntryCOLUMN)
+missionDirectorEntryCMD = Entry(root, width = 30, textvariable = missionDirectorVarARG).grid(row = 2, column = CommandEntryCOLUMN)
+missionDirectorEntryARG = Entry(root, width = 30, textvariable = missionDirectorVarCMD).grid(row = 2, column = ArgEntryCOLUMN)
+planeOBCIPEntry = Entry(root, width = 30, textvariable = planeOBCIPVar).grid(row = 3, column = CommandEntryCOLUMN)
+planeOBCEntryCMD = Entry(root, width = 30, textvariable = planeOBCVarCMD).grid(row = 4, column = CommandEntryCOLUMN)
+planeOBCEntryARG = Entry(root, width = 30, textvariable = planeOBCVarARG).grid(row = 4, column = ArgEntryCOLUMN)
+heimdallIPEntry = Entry(root, width = 30, textvariable = heimdallIPVar).grid(row = 5, column = CommandEntryCOLUMN)
+heimdallEntryCMD = Entry(root, width = 30, textvariable = heimdallVarCMD).grid(row = 6, column = CommandEntryCOLUMN)
+heimdallEntryARG = Entry(root, width = 30, textvariable = heimdallVarARG).grid(row = 6, column = ArgEntryCOLUMN)
+mavProxyIPEntry = Entry(root, width = 30, textvariable = mavProxyIPVar).grid(row = 7, column = CommandEntryCOLUMN)
+mavProxyEntry = Entry(root, width = 30, textvariable = mavProxyVar).grid(row = 8, column = CommandEntryCOLUMN)
+gimbalEntry = Entry(root, width = 30, text = gimbalAngleVar).grid(row = 9, column = CommandEntryCOLUMN)
 
 #####Buttons
-connectButton = Button(root, text = "Connect", width = 5, command = missionDirectorIPConnect).grid(row = 1, column = 2)
-sendButton = Button(root, text = "Send", width = 5, command = missionDirectorSend).grid(row = 2, column = 2)
-connect2Button = Button(root, text = "Connect", width = 5, command = planeOBCIPConnect).grid(row = 3, column = 2)
-send2Button = Button(root, text = "Send", width = 5, command = planeOBCSend).grid(row = 4, column = 2)
-connect3Button = Button(root, text = "Connect", width = 5, command = heimdallIPConnect).grid(row = 5, column = 2)
-send3Button = Button(root, text = "Send", width = 5, command = heimdallSend).grid(row = 6, column = 2)
-connect4Button = Button(root, text = "Connect", width =5, command = mavProxyIPConnect).grid(row = 7, column = 2)
-send4Button = Button(root, text = "Send", width= 5, command = mavProxySend).grid(row = 8, column = 2)
-send7Button = Button(root, text = "Set", width = 5, command = currentGimbalAngleSet).grid(row = 9, column = 2)
+connectButton = Button(root, text = "Connect", width = 5, command = missionDirectorIPConnect).grid(row = 1, column = BUTTONSCOLUMN)
+sendButton = Button(root, text = "Send", width = 5, command = missionDirectorSend).grid(row = 2, column = BUTTONSCOLUMN)
+connect2Button = Button(root, text = "Connect", width = 5, command = planeOBCIPConnect).grid(row = 3, column = BUTTONSCOLUMN)
+send2Button = Button(root, text = "Send", width = 5, command = planeOBCSend).grid(row = 4, column = BUTTONSCOLUMN)
+connect3Button = Button(root, text = "Connect", width = 5, command = heimdallIPConnect).grid(row = 5, column = BUTTONSCOLUMN)
+send3Button = Button(root, text = "Send", width = 5, command = heimdallSend).grid(row = 6, column = BUTTONSCOLUMN)
+connect4Button = Button(root, text = "Connect", width =5, command = mavProxyIPConnect).grid(row = 7, column = BUTTONSCOLUMN)
+send4Button = Button(root, text = "Send", width= 5, command = mavProxySend).grid(row = 8, column = BUTTONSCOLUMN)
+send7Button = Button(root, text = "Set", width = 5, command = currentGimbalAngleSet).grid(row = 9, column = BUTTONSCOLUMN)
 
 beginMissionButton = Button(root, text = "Begin Mission", width = 15, 
 	command = confirmBeginMission).grid(row = 10, column = 0)

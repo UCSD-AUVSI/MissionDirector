@@ -14,14 +14,14 @@ def main(argv):
 	
 	# Setup several parallel listeners
 	ports_and_callbacks = []
-	ports_and_callbacks.append((ports.listenport_MAVProxy, listener_MAVProxy.callback))
-	ports_and_callbacks.append((ports.listenport_Heimdall, listener_Heimdall.callback))
-	ports_and_callbacks.append((ports.listenport_PlaneOBC, listener_PlaneOBC.callback))
-	ports_and_callbacks.append((ports.listenport_HumanOperator, listener_HumanOperator.callback))
+	ports_and_callbacks.append((ports.listenport_MAVProxy, listener_MAVProxy.callback, False))
+	ports_and_callbacks.append((ports.listenport_Heimdall, listener_Heimdall.callback, False))
+	ports_and_callbacks.append((ports.listenport_PlaneOBC, listener_PlaneOBC.callback, False))
+	ports_and_callbacks.append((ports.listenport_HumanOperator, listener_HumanOperator.callback, False))
 	
-	# Start server and wait here for keyboard interrupt
+	# Start server and wait here for keyboard interrupt, and keep trying to start connections
 	s = server_multiport.server()
-	s.start(ports_and_callbacks, "localhost", True)
+	s.start(ports_and_callbacks, "localhost", True, True)
 
 
 #-----------------------------------------------------------

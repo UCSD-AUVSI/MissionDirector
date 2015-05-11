@@ -7,7 +7,7 @@ from Networking import ports
 #-----------------------------------------------------------
 # Manage messages from MAVProxy's "mdlink" module, which currently does not use JSON
 #
-def callback(data):
+def callback(data, FromIPaddr):
 	print "received message from MAVProxy: \"" + str(data) + "\""
 	print "todo: Update MissionDirector values such as \"time_elapsed\" or \"gps_location\",\n\tand tell it about events such as \"WaypointReached\""
 	
@@ -15,6 +15,6 @@ def callback(data):
 		print("Mission Director received \"hello\" message from MAVProxy; replying")
 		
 		#send the same message back to MAVProxy
-		send_message_to_client(datastr, ports.outport_MAVProxy)
+		send_message_to_client(datastr, ports.outport_MAVProxy, ports.IPaddr_MAVProxy)
 
 
