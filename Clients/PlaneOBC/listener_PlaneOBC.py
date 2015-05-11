@@ -14,10 +14,13 @@ def callback(data):
 	
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
-	command = json_data["command"]
+	cmd = json_data["cmd"]
 	args = json_data["args"]
 	
-	if command == "save_credentials":
+	if cmd == "status":
+		print("PlaneOBC reported status: "+str(args))
+	
+	if cmd == "save_credentials":
 		username = args["username"]
 		password = args["password"]
 		
@@ -25,12 +28,12 @@ def callback(data):
 		
 		# call Heimdall function to get highest image
 		msg = {}
-		msg["command"] = "get_top_filename"
+		msg["cmd"] = "get_top_filename"
 
 		send_message_to_client(json.dumps(msg),ports.outport_Heimdall)
 		print "forwarded message from MissionDirector to Heimdall"
 
-	elif command == "uploaded_image":
+	elif cmd == "uploaded_image":
 		print "Done, Image was uploaded"
 
 

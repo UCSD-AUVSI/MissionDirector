@@ -26,8 +26,8 @@ root = Tk()
 
 def missionDirectorIPConnect():
 	hellomsg = {}
-	hellomsg["command"] = "hello"
-	hellomsg["args"] = "a"
+	hellomsg["cmd"] = "status"
+	hellomsg["args"] = {"hello":"ask"}
 	send_message_to_client(json.dumps(hellomsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def missionDirectorSend():
@@ -41,10 +41,10 @@ def missionDirectorSend():
 def planeOBCIPConnect():
 	#todo: update gui when a reply is received?
 	remotemsg = {}
-	remotemsg["command"] = "hello"
-	remotemsg["args"] = "a"
+	remotemsg["cmd"] = "status"
+	remotemsg["args"] = {"hello":"ask"}
 	fwdmsg = {}
-	fwdmsg["command"] = "planeobc:"
+	fwdmsg["cmd"] = "planeobc:"
 	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
@@ -54,13 +54,12 @@ def planeOBCSend():
 		print"Please enter something"
 	else:
 		remotemsg = {}
-		remotemsg["command"] = someVar
+		remotemsg["cmd"] = someVar
 		remotemsg["args"] = {"a":"a"}
 		fwdmsg = {}
-		fwdmsg["command"] = "planeobc:"
+		fwdmsg["cmd"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
-		print "Sent command (WITH NO ARGS) to plane OBC: ", someVar
 
 def heimdallIPConnect():
 	someVar = heimdallIPVar.get()
@@ -125,10 +124,10 @@ def confirmBeginImaging():
 		print "Beginning imaging..."
 		#put method calls here
 		remotemsg = {}
-		remotemsg["command"] = "imaging"
+		remotemsg["cmd"] = "imaging"
 		remotemsg["args"] = {"do":"start"}
 		fwdmsg = {}
-		fwdmsg["command"] = "planeobc:"
+		fwdmsg["cmd"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 	else:
@@ -140,10 +139,10 @@ def confirmStopImaging():
 		print "Stopping imaging"
 		#put method calls here
 		remotemsg = {}
-		remotemsg["command"] = "imaging"
+		remotemsg["cmd"] = "imaging"
 		remotemsg["args"] = {"do":"stop"}
 		fwdmsg = {}
-		fwdmsg["command"] = "planeobc:"
+		fwdmsg["cmd"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 	else:

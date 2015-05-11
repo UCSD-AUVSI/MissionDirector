@@ -9,9 +9,9 @@ import time
 #
 def callback(data):
 	json_data = json.loads(data)
-	command = json_data["command"]
+	cmd = json_data["cmd"]
 
-	print "\nreceived "+command +" message from Heimdall"
+	print "\nreceived "+cmd+" message from Heimdall"
 	print json_data
 
 	
@@ -20,7 +20,7 @@ def callback(data):
 	# talk with mission director to send new waypoints
 	# mission director needs to be able to verify points are inside the map
 
-	if command == "send_image_path":
+	if cmd == "send_image_path":
 		time.sleep(10)
 		send_message_to_client(json.dumps(json_data),ports.outport_PlaneOBC)
 		print "forwarded message from MissionDirector to PlaneOBC"

@@ -17,34 +17,34 @@ def callback(data):
 	
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
-	command = json_data["command"]
+	cmd = json_data["cmd"]
 	args = json_data["args"]
 	
 	#--------------------------------------------------------------------------
 	# If command is "mavproxy:", forward argument "message" to MAVProxy
 	#
-	if command == "mavproxy:":
+	if cmd == "mavproxy:":
+		print("forwarding message from HumanOperator to MAVProxy mdlink")
 		msg = args["message"]
 		send_message_to_client(msg, ports.outport_MAVProxy)
-		print "forwarded message from HumanOperator to MAVProxy mdlink"
 	
 	#--------------------------------------------------------------------------
 	# If command is "heimdall:", forward argument "message" to Heimdall
 	#
-	if command == "heimdall:":
+	if cmd == "heimdall:":
+		print("forwarding message from HumanOperator to Heimdall")
 		msg = args["message"]
 		send_message_to_client(msg, ports.outport_Heimdall)
-		print "forwarded message from HumanOperator to Heimdall"
 	
 	#--------------------------------------------------------------------------
 	# If message starts with "planeobc:", forward argument "message" to PlaneOBC
 	#
 
-	if command == "planeobc:":
+	if cmd == "planeobc:":
+		print("forwarding message from HumanOperator to PlaneOBC")
 		msg = args["message"]
 		ipaddr = args["ip"]
 		send_message_to_client(msg, ports.outport_PlaneOBC, IPaddr=ipaddr)
-		print "forwarded message from HumanOperator to PlaneOBC"
 	
 	#--------------------------------------------------------------------------
 	# Todo: other types of messages/commands that a human operator might want to send
