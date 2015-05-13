@@ -8,7 +8,7 @@ import time
 #-----------------------------------------------------------
 # todo: handle messages from PlaneOBC
 #
-def callback(data):
+def callback(data, FromIPaddr):
 
 	print "received message from PlaneOBC: \"" + str(data) + "\""
 	
@@ -19,6 +19,7 @@ def callback(data):
 	
 	if cmd == "status":
 		print("PlaneOBC reported status: "+str(args))
+		send_message_to_client(json.dumps({"cmd":"status","args":{"from":"PlaneOBC","message":json.dumps(args)}}), ports.outport_HumanOperator, ports.IPaddr_HumanOperator)
 	
 	if cmd == "save_credentials":
 		username = args["username"]
@@ -30,7 +31,7 @@ def callback(data):
 		msg = {}
 		msg["cmd"] = "get_top_filename"
 
-		send_message_to_client(json.dumps(msg),ports.outport_Heimdall)
+		send_message_to_client(json.dumps(msg), ports.outport_Heimdall, ports.IPaddr_Heimdall)
 		print "forwarded message from MissionDirector to Heimdall"
 
 	elif cmd == "uploaded_image":
