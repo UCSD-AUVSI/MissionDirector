@@ -34,11 +34,11 @@ def CallbackFromMissionDirector(data, FromIPaddr):
 def ThreadedListenToMissionDirectorMainServer(ipaddr):
 	global ListenerToMissionDirectorServer
 	global TryingToStartMissionDirectorServer
-	ports_and_callbacks = [(ports.outport_HumanOperator, CallbackFromMissionDirector, False)]
+	ports_and_callbacks = [(ports.outport_HumanOperator, CallbackFromMissionDirector, server_multiport.SSLSecurityDetails(False))]
 	ListenerToMissionDirectorServer.stop()
 	ListenerToMissionDirectorServer.start(ports_and_callbacks, ipaddr, False, False) # Start server in the background
 	time.sleep(1)
-	if ListenerToMissionDirectorServer.CheckAllSocketsConnected() == False:
+	if ListenerToMissionDirectorServer.CheckAllSocketsBound() == False:
 		TryingToStartMissionDirectorServer = False
 
 def StartListenerToMissionDirectorMainServer(ipaddr):

@@ -14,6 +14,8 @@ listenport_MAVProxy = 9982  #messages received FROM MAVProxy TO MissionDirector
 outport_MAVProxy = 9983     #for messages sent FROM MissionDirector TO MAVProxy
 IPaddr_MAVProxy = "unknown"  #given at runtime by HumanOperatorGUI
 
+PlaneOBC_secure_socket_is_connected = False
+PlaneOBC_secure_socket = ""
 hybridport_PlaneOBC = 9984  #messages both TO and FROM PlaneOBC and MissionDirector
 IPaddr_PlaneOBC = "unknown"  #given at runtime by HumanOperatorGUI
 		#note: PlaneOBC is a secure socket channel (i.e. SSL/TLS)

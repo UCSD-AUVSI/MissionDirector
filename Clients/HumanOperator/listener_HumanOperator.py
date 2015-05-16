@@ -12,9 +12,9 @@ import time
 #-----------------------------------------------------------------------------
 # Callback to process an incoming message or command from the human operator
 #
-def callback(data, FromIPaddr):
-	print "received message from human operator: \"" + str(data) + "\""
-	ports.IPaddr_HumanOperator = FromIPaddr
+def callback(data, addrinfo):
+	print("received message from human operator: \""+str(data)+"\" at address "+str(addrinfo))
+	ports.IPaddr_HumanOperator = addrinfo[0]
 	
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
 	json_data = json.loads(data)
@@ -23,7 +23,7 @@ def callback(data, FromIPaddr):
 	
 	if cmd == "status":
 		if "hello" in args:
-			send_message_to_client(json.dumps({"cmd":"status","args":{"from":"MissionDirector","message":"hello-reply"}}), ports.outport_HumanOperator, FromIPaddr)
+			send_message_to_client(json.dumps({"cmd":"status","args":{"from":"MissionDirector","message":"hello-reply"}}), ports.outport_HumanOperator, addrinfo[0])
 	
 	#--------------------------------------------------------------------------
 	# If command is "mavproxy:", forward argument "message" to MAVProxy
