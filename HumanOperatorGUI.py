@@ -66,7 +66,7 @@ def missionDirectorIPConnect():
 def missionDirectorSend():
 	cmd = missionDirectorVarCMD.get()
 	args = missionDirectorVarARG.get()
-	if len(missionDirectorVarCMD) == 0:
+	if len(cmd) == 0:
 		print"Please enter command / args"
 	else:
 		mdmsg = {}
@@ -170,7 +170,7 @@ def confirmBeginImaging():
 		#put method calls here
 		remotemsg = {}
 		remotemsg["cmd"] = "imaging"
-		remotemsg["args"] = {"do":"start"}
+		remotemsg["args"] = {"start":" "}
 		fwdmsg = {}
 		fwdmsg["cmd"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
@@ -185,7 +185,7 @@ def confirmStopImaging():
 		#put method calls here
 		remotemsg = {}
 		remotemsg["cmd"] = "imaging"
-		remotemsg["args"] = {"do":"stop"}
+		remotemsg["args"] = {"stop":" "}
 		fwdmsg = {}
 		fwdmsg["cmd"] = "planeobc:"
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}

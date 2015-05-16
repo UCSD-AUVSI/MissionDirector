@@ -43,12 +43,6 @@ class server:
 		print "Server done shutting down."
 		self.readytostart = True
 	
-	def CheckSocketOfClientOnPort(self, portnum):
-		for idx in range(len(self.ThreadedListenSocks)):
-			if self.ThreadedListenSocks[idx].portnum == portnum and self.ThreadedListenSocks[idx].ClientConnectedOnSocket:
-				return True
-		return False
-	
 	def CheckAllSocketsBound(self):
 		socketsboundlen = len(self.ThreadedListenSocks)
 		numsocketsbound = 0
@@ -78,38 +72,10 @@ class server:
 			
 			if wait_for_interrupt:
 				try:
-					import ports
-					needtoaddplaneobc = True
 					while True:
 						time.sleep(0.1)
-						if self.CheckSocketOfClientOnPort(ports.hybridport_PlaneOBC) == False and needtoaddplaneobc == True:
-							if ports.PlaneOBC_secure_socket_is_connected == True:
-								needtoaddplaneobc = False
-								print("STARTING PLANEOBC LISTENER~~~~~~")
-								from Clients.PlaneOBC import listener_PlaneOBC
-								SocketsBoundThreadIdx = len(self.ThreadedListenSocks)
-								self.ThreadedListenSocks.append(ThreadedListenSock(mythread=threading.Thread(target=self.listen_on_given_socket, args=(ports.hybridport_PlaneOBC, listener_PlaneOBC.callback, ports.IPaddr_PlaneOBC, self.keep_running, SocketsBoundThreadIdx)), myportnum=ports.hybridport_PlaneOBC))
-								self.ThreadedListenSocks[-1].thread.daemon = True
-								self.ThreadedListenSocks[-1].thread.start()
 				except KeyboardInterrupt:
 					self.stop()
-	
-	#-----------------------------------------------------------
-	def listen_on_given_socket(self, port, callback, ipv4address, keep_running_until_interrupt, thisthreadidx):
-		
-		import ports
-		self.ThreadedListenSocks[thisthreadidx].SocketBoundBoolean = True
-		self.ThreadedListenSocks[thisthreadidx].ClientConnectedOnSocket = True
-		self.ThreadedListenSocks[thisthreadidx].ClientSocket = ports.PlaneOBC_secure_socket
-		
-		while keep_running_until_interrupt.is_set(): #keep receiving from this client until client shuts down
-			#print "port "+str(port)+" is waiting for data from client..."
-			data = self.ThreadedListenSocks[thisthreadidx].ClientSocket.recv(1024)
-			if not data: continue
-			#print "port "+str(port)+" received data from client: \"" + str(data) + "\""
-			callback(data, (ipv4address, port))
-		
-		print("QUITTING PLANEOBC SSL SOCKET??????????????????????")
 	
 	#-----------------------------------------------------------
 	# Listen on one port (don't use this outside this file)
@@ -143,8 +109,12 @@ class server:
 				#print "port "+str(port)+" is waiting for a new client!"
 				(clientsock, caddress) = listensocket.accept()
 				
-				if ssl_security.secured and ipv4address != "localhost":
-					self.ThreadedListenSocks[thisthreadidx].ClientSocket = ssl.wrap_socket(clientsock, server_side=True, cerfile=ssl_security.certfile, keyfile=ssl_security.keyfile)
+				if ssl_security.secured and ipv4address != "localhost" and ipv4address != "127.0.0.1":
+					if os.path.isfile(ssl_security.certfile) == False:
+						print("WARNING: SSL CERT-FILE \""+ssl_security.certfile+"\"NOT FOUND")
+					if os.path.isfile(ssl_security.keyfile) == False:
+						print("WARNING: SSL KEY-FILE \""+ssl_security.keyfile+"\" NOT FOUND")
+					self.ThreadedListenSocks[thisthreadidx].ClientSocket = ssl.wrap_socket(clientsock, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1, keyfile=ssl_security.keyfile, certfile=ssl_security.certfile, ca_certs=ssl_security.cacerts, cert_reqs=ssl.CERT_REQUIRED) #the last two arguments indicate that a client cert is required
 				else:
 					self.ThreadedListenSocks[thisthreadidx].ClientSocket = clientsock
 				self.ThreadedListenSocks[thisthreadidx].ClientConnectedOnSocket = True
@@ -158,6 +128,7 @@ class server:
 					#print "port "+str(port)+" received data from client: \"" + str(data) + "\""
 					callback(data, caddress)
 				
+				#print("closing socket with client....................................................")
 				self.ThreadedListenSocks[thisthreadidx].ClientSocket.close()
 		
 		listensocket.close()

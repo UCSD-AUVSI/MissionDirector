@@ -16,6 +16,8 @@ IPaddr_MAVProxy = "unknown"  #given at runtime by HumanOperatorGUI
 
 PlaneOBC_secure_socket_is_connected = False
 PlaneOBC_secure_socket = ""
-hybridport_PlaneOBC = 9984  #messages both TO and FROM PlaneOBC and MissionDirector
+PlaneOBC_listeningssldetails = ""
+outport_PlaneOBC = 9985  #messages TO PlaneOBC FROM MissionDirector
+listenport_PlaneOBC = 9984  #messages FROM PlaneOBC TO MissionDirector
 IPaddr_PlaneOBC = "unknown"  #given at runtime by HumanOperatorGUI
 		#note: PlaneOBC is a secure socket channel (i.e. SSL/TLS)
