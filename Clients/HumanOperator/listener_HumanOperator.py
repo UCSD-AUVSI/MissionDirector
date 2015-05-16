@@ -54,7 +54,7 @@ def callback(data, FromIPaddr):
 		msg = args["message"]
 		ipaddr = args["ip"]
 		ports.IPaddr_PlaneOBC = ipaddr
-		send_message_to_client(msg, ports.outport_PlaneOBC, IPaddr=ipaddr)
+		send_message_to_client(msg, ports.hybridport_PlaneOBC, IPaddr=ipaddr)
 	
 	#--------------------------------------------------------------------------
 	# Todo: other types of messages/commands that a human operator might want to send

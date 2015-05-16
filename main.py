@@ -16,7 +16,7 @@ def main(argv):
 	ports_and_callbacks = []
 	ports_and_callbacks.append((ports.listenport_MAVProxy, listener_MAVProxy.callback, False))
 	ports_and_callbacks.append((ports.listenport_Heimdall, listener_Heimdall.callback, False))
-	ports_and_callbacks.append((ports.listenport_PlaneOBC, listener_PlaneOBC.callback, False))
+	ports_and_callbacks.append((ports.hybridport_PlaneOBC, listener_PlaneOBC.callback, False))
 	ports_and_callbacks.append((ports.listenport_HumanOperator, listener_HumanOperator.callback, False))
 	
 	# Start server and wait here for keyboard interrupt, and keep trying to start connections

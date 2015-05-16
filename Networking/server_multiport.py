@@ -6,6 +6,11 @@
 import select, socket, sys, time, threading
 import ssl
 
+class ThreadedListenSock:
+	def __init__(self, mythread):
+		self.thread = mythread
+		self.SocketBoundBoolean = False
+		self.Socket = ""
 
 #-------------------------------------------------------------------
 # Starts a listen server, listening on as many ports as you provide
@@ -19,8 +24,7 @@ class server:
 	
 	def __init__(self):
 		self.keep_running = threading.Event()
-		self.threads = []
-		self.SocketsBoundBooleans = []
+		self.ThreadedListenSocks = []
 		self.readytostart = True
 	
 	def stop(self):
@@ -32,10 +36,10 @@ class server:
 		self.readytostart = True
 	
 	def CheckAllSocketsConnected(self):
-		socketsboundlen = len(self.SocketsBoundBooleans)
+		socketsboundlen = len(self.ThreadedListenSocks)
 		numsocketsbound = 0
 		for idx in range(socketsboundlen):
-			if self.SocketsBoundBooleans[idx]:
+			if self.ThreadedListenSocks[idx].SocketBoundBoolean:
 				numsocketsbound = numsocketsbound + 1
 		if numsocketsbound == socketsboundlen:
 			return True
@@ -49,12 +53,10 @@ class server:
 			# this will maintain an "on" state, that will shut down the threads when switched
 			self.keep_running.set()
 			
-			self.threads = []
-			self.SocketsBoundBooleans = []
+			self.ThreadedListenSocks = []
 			SocketsBoundThreadIdx = 0
 			for port_and_callback in ports_and_callbacks:
-				self.threads.append(threading.Thread(target=self.start_port_listener, args=(port_and_callback[0], port_and_callback[1], ipv4address, port_and_callback[2], self.keep_running, keep_retrying_to_bind_socket, SocketsBoundThreadIdx)))
-				self.SocketsBoundBooleans.append(False)
+				self.ThreadedListenSocks.append(ThreadedListenSock(threading.Thread(target=self.start_port_listener, args=(port_and_callback[0], port_and_callback[1], ipv4address, port_and_callback[2], self.keep_running, keep_retrying_to_bind_socket, SocketsBoundThreadIdx))))
 				SocketsBoundThreadIdx = (SocketsBoundThreadIdx + 1)
 			for thread in self.threads:
 				thread.daemon = True
@@ -70,7 +72,7 @@ class server:
 	#-----------------------------------------------------------
 	# Listen on one port (don't use this outside this file)
 	# When a message is received, give it to the callback
-	# self is used to set SocketsBoundBooleans
+	# self is used to set ThreadedListenSocks
 	#
 	def start_port_listener(self, port, callback, ipv4address, ssl_secured, keep_running_until_interrupt, keep_retrying_to_bind_socket, thisthreadidx):
 	
@@ -85,7 +87,7 @@ class server:
 	
 		keeptrying = True
 		while keeptrying == True:
-			try:	
+			try:
 				listensocket.bind((ipv4address, port))
 				keeptrying = False
 			except socket.error:
@@ -96,7 +98,7 @@ class server:
 				time.sleep(0.5)
 		
 		listensocket.listen(0) # 0 for debugging; 3-5 for release version
-		self.SocketsBoundBooleans[thisthreadidx] = True
+		self.ThreadedListenSocks[thisthreadidx].SocketBoundBoolean = True
 		print("socket successfully bound for listening at ip "+str(ipv4address)+" on port "+str(port))
 	
 		while keep_running_until_interrupt.is_set():
@@ -117,7 +119,7 @@ class server:
 				clientsocket.close()
 	
 		listensocket.close()
-		self.SocketsBoundBooleans[thisthreadidx] = False
+		self.ThreadedListenSocks[thisthreadidx].SocketBoundBoolean = False
 		print "Socket on port "+str(port)+" closed!"
 
 

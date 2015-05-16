@@ -22,7 +22,7 @@ def callback(data, FromIPaddr):
 
 	if cmd == "send_image_path":
 		time.sleep(10)
-		send_message_to_client(json.dumps(json_data), ports.outport_PlaneOBC, ports.IPaddr_PlaneOBC)
+		send_message_to_client(json.dumps(json_data), ports.hybridport_PlaneOBC, ports.IPaddr_PlaneOBC)
 		print "forwarded message from MissionDirector to PlaneOBC"
 
 

@@ -16,7 +16,7 @@ def send_message_to_client(msg, port, IPaddr):
 #
 def private___dispatch_msg(msg, port, IPaddr):
 	try:
-		if port == ports.outport_PlaneOBC and IPaddr != "localhost":
+		if port == ports.hybridport_PlaneOBC and IPaddr != "localhost":
 			s_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			s = ssl.wrap_socket(s_,
 						ssl_version=ssl.PROTOCOL_TLSv1,
