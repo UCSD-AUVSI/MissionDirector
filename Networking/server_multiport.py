@@ -92,7 +92,7 @@ class server:
 				listensocket.bind((ipv4address, port))
 				keeptrying = False
 			except socket.error:
-				print("server couldnt bind socket? "+str(sys.exc_info()[0]))
+				print("server couldnt bind socket? "+str(sys.exc_info()[0])+" attempted on (ip,port) == ("+str(ipv4address)+", "+str(port)+")")
 				if keep_retrying_to_bind_socket == False:
 					print("failed to bind socket... quitting attempts")
 					return

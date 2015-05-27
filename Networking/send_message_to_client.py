@@ -16,7 +16,7 @@ def send_message_to_client(msg, port, IPaddr):
 #
 def private___dispatch_msg(msg, port, IPaddr):
 	#try:
-	if port == ports.outport_PlaneOBC and IPaddr != "localhost" and IPaddr != "127.0.0.1":
+	if ports.PlaneOBC_use_secure_comms_boolean and port == ports.outport_PlaneOBC and IPaddr != "localhost" and IPaddr != "127.0.0.1":
 		SERVERCERTFILE = '/mywork/AUVSI/sslcerts/nobs-auvsi-cert-server.crt'
 		CLIENTCERTFILE = '/mywork/AUVSI/sslcerts/MDclientJason.crt'
 		CLIENTKEYFILE = '/mywork/AUVSI/sslcerts/MDclientJason.key.nopass'

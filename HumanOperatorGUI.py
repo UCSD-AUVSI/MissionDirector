@@ -60,10 +60,17 @@ def TryConvertStringToJSON(givenstring):
 	except ValueError:
 		return givenstring
 
+def StartMyListenerToMissionControl():
+	myIPaddr = humanOpMyIPVar.get()
+	if len(myIPaddr) != 0:
+		print("starting listener to MissionControl")
+		StartListenerToMissionDirectorMainServer(myIPaddr)
+	else:
+		print("please enter this machine\'s static IP address")
+
 def missionDirectorIPConnect():
 	MDipaddr = mDIPAVar.get()
 	if len(MDipaddr) != 0:
-		StartListenerToMissionDirectorMainServer(MDipaddr)
 		hellomsg = {}
 		hellomsg["cmd"] = "status"
 		hellomsg["args"] = {"hello":"ask"}
@@ -241,12 +248,15 @@ def confirmGetReimagingWayPoints():
 		print "Did not reimage waypoints"
 
 def handler():
-    result = tkMessageBox.askquestion("Quit?", "Are you sure you want to quit? This will end the mission.")
-    if result == 'yes':   
+    #result = tkMessageBox.askquestion("Quit?", "Are you sure you want to quit? This will end the mission.")
+    if True: # result == 'yes':
+	global ListenerToMissionDirectorServer
+	ListenerToMissionDirectorServer.stop()
         root.quit()
     else:
     	print "Did not end mission"
 
+humanOpMyIPVar = StringVar()
 mDIPAVar = StringVar()
 missionDirectorVarCMD = StringVar()
 missionDirectorVarARG = StringVar()
@@ -281,16 +291,28 @@ systemTitle = Label(root, text = "arg(s)", font = "bold").grid(row = 0, column =
 
 #systemStatus = Label(root, text = "Status", width = 15, font = "bold").grid(row = 0, column = StatusCOLUMN)
 #System Names
-mDIPA = Label(root, relief = RIDGE, text = "MissionControl IP", width = 18).grid(row= 1, column = 0)
-missionDirector = Label(root, relief = RIDGE, text = "MissionControl", width = 18).grid(row=2, column = 0)
-planeOBCIP = Label(root, relief = RIDGE, text = "PlaneOBC IP", width = 18).grid(row=3, column = 0)
-planeOBC = Label(root, relief = RIDGE, text = "PlaneOBC", width = 18).grid(row=4, column = 0)
-heimdallIP = Label(root, relief = RIDGE, text = "Heimdall IP", width = 18).grid(row=5, column = 0)
-heimdall = Label(root, relief = RIDGE, text = "Heimdall", width = 18).grid(row=6, column = 0)
-mavProxyIP = Label(root, relief = RIDGE, text = "MissonPlanner IP", width = 18).grid(row = 7, column = 0)
-mavProxy = Label(root, relief = RIDGE, text = "MissionPlanner", width = 18).grid(row = 8, column = 0)
-interoperabilityIP = Label(root, relief = RIDGE, text = "Interoperability URL", width = 18).grid(row = 9, column = 0)
-interoperability = Label(root, relief = RIDGE, text = "Interoperability", width = 18).grid(row = 10, column = 0)
+rowiter = 1
+humanOpMyIP = Label(root, relief = RIDGE, text = "My HumanOperator IP", width = 18).grid(row= rowiter, column = 0)
+rowiter += 1
+mDIPA = Label(root, relief = RIDGE, text = "MissionControl IP", width = 18).grid(row= rowiter, column = 0)
+rowiter += 1
+missionDirector = Label(root, relief = RIDGE, text = "MissionControl", width = 18).grid(row=rowiter, column = 0)
+rowiter += 1
+planeOBCIP = Label(root, relief = RIDGE, text = "PlaneOBC IP", width = 18).grid(row=rowiter, column = 0)
+rowiter += 1
+planeOBC = Label(root, relief = RIDGE, text = "PlaneOBC", width = 18).grid(row=rowiter, column = 0)
+rowiter += 1
+heimdallIP = Label(root, relief = RIDGE, text = "Heimdall IP", width = 18).grid(row=rowiter, column = 0)
+rowiter += 1
+heimdall = Label(root, relief = RIDGE, text = "Heimdall", width = 18).grid(row=rowiter, column = 0)
+rowiter += 1
+mavProxyIP = Label(root, relief = RIDGE, text = "MissonPlanner IP", width = 18).grid(row = rowiter, column = 0)
+rowiter += 1
+mavProxy = Label(root, relief = RIDGE, text = "MissionPlanner", width = 18).grid(row = rowiter, column = 0)
+rowiter += 1
+interoperabilityIP = Label(root, relief = RIDGE, text = "Interoperability URL", width = 18).grid(row = rowiter, column = 0)
+rowiter += 1
+interoperability = Label(root, relief = RIDGE, text = "Interoperability", width = 18).grid(row = rowiter, column = 0)
 
 #gimbalAngle = Label(root, relief = RIDGE, text = "Current Gimbal Angle", width = 18).grid(row = 10, column = 0)
 
@@ -311,39 +333,48 @@ communicationStatus = Label(root, text = "Default Status").grid(row = 12, column
 """
 
 #####Entry fields
-mDIPAEntry = Entry(root, width = 30, textvariable = mDIPAVar).grid(row = 1, column = ArgEntryCOLUMN)
-missionDirectorEntryCMD = Entry(root, width = 30, textvariable = missionDirectorVarCMD).grid(row = 2, column = CommandEntryCOLUMN)
-missionDirectorEntryARG = Entry(root, width = 30, textvariable = missionDirectorVarARG).grid(row = 2, column = ArgEntryCOLUMN)
-
-planeOBCIPEntry = Entry(root, width = 30, textvariable = planeOBCIPVar).grid(row = 3, column = ArgEntryCOLUMN)
-planeOBCEntryCMD = Entry(root, width = 30, textvariable = planeOBCVarCMD).grid(row = 4, column = CommandEntryCOLUMN)
-planeOBCEntryARG = Entry(root, width = 30, textvariable = planeOBCVarARG).grid(row = 4, column = ArgEntryCOLUMN)
-
-heimdallIPEntry = Entry(root, width = 30, textvariable = heimdallIPVar).grid(row = 5, column = ArgEntryCOLUMN)
-heimdallEntryCMD = Entry(root, width = 30, textvariable = heimdallVarCMD).grid(row = 6, column = CommandEntryCOLUMN)
-heimdallEntryARG = Entry(root, width = 30, textvariable = heimdallVarARG).grid(row = 6, column = ArgEntryCOLUMN)
-
-mavProxyIPEntry = Entry(root, width = 30, textvariable = mavProxyIPVar).grid(row = 7, column = ArgEntryCOLUMN)
-mavProxyEntryCMD = Entry(root, width = 30, textvariable = mavProxyVarCMD).grid(row = 8, column = CommandEntryCOLUMN)
-mavProxyEntryARG = Entry(root, width = 30, textvariable = mavProxyVarARG).grid(row = 8, column = ArgEntryCOLUMN)
-
-interoperabilityIPEntry = Entry(root, width = 30, textvariable = interoperabilityIPVar).grid(row = 9, column = ArgEntryCOLUMN)
-interoperabilityEntryCMD = Entry(root, width = 30, textvariable = interoperabilityVarCMD).grid(row = 10, column = CommandEntryCOLUMN)
-interoperabilityEntryARG = Entry(root, width = 30, textvariable = interoperabilityVarARG).grid(row = 10, column = ArgEntryCOLUMN)
+rowiter = 1
+humanOpMyIPEntry = Entry(root, width = 30, textvariable = humanOpMyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+mDIPAEntry = Entry(root, width = 30, textvariable = mDIPAVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+missionDirectorEntryCMD = Entry(root, width = 30, textvariable = missionDirectorVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+missionDirectorEntryARG = Entry(root, width = 30, textvariable = missionDirectorVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+planeOBCIPEntry = Entry(root, width = 30, textvariable = planeOBCIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+planeOBCEntryCMD = Entry(root, width = 30, textvariable = planeOBCVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+planeOBCEntryARG = Entry(root, width = 30, textvariable = planeOBCVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+heimdallIPEntry = Entry(root, width = 30, textvariable = heimdallIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+heimdallEntryCMD = Entry(root, width = 30, textvariable = heimdallVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+heimdallEntryARG = Entry(root, width = 30, textvariable = heimdallVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+mavProxyIPEntry = Entry(root, width = 30, textvariable = mavProxyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+mavProxyEntryCMD = Entry(root, width = 30, textvariable = mavProxyVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+mavProxyEntryARG = Entry(root, width = 30, textvariable = mavProxyVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+interoperabilityIPEntry = Entry(root, width = 30, textvariable = interoperabilityIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+rowiter += 1
+interoperabilityEntryCMD = Entry(root, width = 30, textvariable = interoperabilityVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+interoperabilityEntryARG = Entry(root, width = 30, textvariable = interoperabilityVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
 
 #gimbalEntry = Entry(root, width = 30, text = gimbalAngleVar).grid(row = 9, column = CommandEntryCOLUMN)
 
 #####Buttons
-connectButton = Button(root, text = "Connect", width = 5, command = missionDirectorIPConnect).grid(row = 1, column = BUTTONSCOLUMN)
-sendButton = Button(root, text = "Send", width = 5, command = missionDirectorSend).grid(row = 2, column = BUTTONSCOLUMN)
-connect2Button = Button(root, text = "Connect", width = 5, command = planeOBCIPConnect).grid(row = 3, column = BUTTONSCOLUMN)
-send2Button = Button(root, text = "Send", width = 5, command = planeOBCSend).grid(row = 4, column = BUTTONSCOLUMN)
-connect3Button = Button(root, text = "Connect", width = 5, command = heimdallIPConnect).grid(row = 5, column = BUTTONSCOLUMN)
-send3Button = Button(root, text = "Send", width = 5, command = heimdallSend).grid(row = 6, column = BUTTONSCOLUMN)
-connect4Button = Button(root, text = "Connect", width =5, command = mavProxyIPConnect).grid(row = 7, column = BUTTONSCOLUMN)
-send4Button = Button(root, text = "Send", width= 5, command = mavProxySend).grid(row = 8, column = BUTTONSCOLUMN)
-connect5Button = Button(root, text = "Connect", width =5, command = interoperabilityIPConnect).grid(row = 9, column = BUTTONSCOLUMN)
-send5Button = Button(root, text = "Send", width= 5, command = interoperabilitySend).grid(row = 10, column = BUTTONSCOLUMN)
+connect11Button = Button(root, text = "Start", width = 5, command = StartMyListenerToMissionControl).grid(row = 1, column = BUTTONSCOLUMN)
+connect22Button = Button(root, text = "Connect", width = 5, command = missionDirectorIPConnect).grid(row = 2, column = BUTTONSCOLUMN)
+send22Button = Button(root, text = "Send", width = 5, command = missionDirectorSend).grid(row = 3, column = BUTTONSCOLUMN)
+connect33Button = Button(root, text = "Connect", width = 5, command = planeOBCIPConnect).grid(row = 4, column = BUTTONSCOLUMN)
+send33Button = Button(root, text = "Send", width = 5, command = planeOBCSend).grid(row = 5, column = BUTTONSCOLUMN)
+connect44Button = Button(root, text = "Connect", width = 5, command = heimdallIPConnect).grid(row = 6, column = BUTTONSCOLUMN)
+send44Button = Button(root, text = "Send", width = 5, command = heimdallSend).grid(row = 7, column = BUTTONSCOLUMN)
+connect55Button = Button(root, text = "Connect", width =5, command = mavProxyIPConnect).grid(row = 8, column = BUTTONSCOLUMN)
+send55Button = Button(root, text = "Send", width= 5, command = mavProxySend).grid(row = 9, column = BUTTONSCOLUMN)
+connect66Button = Button(root, text = "Connect", width =5, command = interoperabilityIPConnect).grid(row = 10, column = BUTTONSCOLUMN)
+send66Button = Button(root, text = "Send", width= 5, command = interoperabilitySend).grid(row = 11, column = BUTTONSCOLUMN)
 
 #send7Button = Button(root, text = "Set", width = 5, command = currentGimbalAngleSet).grid(row = 9, column = BUTTONSCOLUMN)
 
