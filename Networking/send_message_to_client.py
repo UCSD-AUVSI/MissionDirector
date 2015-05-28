@@ -17,10 +17,12 @@ def send_message_to_client(msg, port, IPaddr):
 def private___dispatch_msg(msg, port, IPaddr):
 	#try:
 	if ports.PlaneOBC_use_secure_comms_boolean and port == ports.outport_PlaneOBC and IPaddr != "localhost" and IPaddr != "127.0.0.1":
-		SERVERCERTFILE = '/mywork/AUVSI/sslcerts/nobs-auvsi-cert-server.crt'
-		CLIENTCERTFILE = '/mywork/AUVSI/sslcerts/MDclientJason.crt'
-		CLIENTKEYFILE = '/mywork/AUVSI/sslcerts/MDclientJason.key.nopass'
+		
 		if ports.PlaneOBC_secure_socket_is_connected == False:
+			SERVERCERTFILE = '/mywork/AUVSI/sslcerts/nobs-auvsi-cert-server.crt'
+			CLIENTCERTFILE = '/mywork/AUVSI/sslcerts/MDclientJason.crt'
+			CLIENTKEYFILE = '/mywork/AUVSI/sslcerts/MDclientJason.key.nopass'
+		
 			ports.IPaddr_PlaneOBC = IPaddr
 			if os.path.isfile(SERVERCERTFILE) == False:
 				print("WARNING: SSL SERVER CA CERT FILE \""+SERVERCERTFILE+"\" NOT FOUND")
@@ -35,8 +37,11 @@ def private___dispatch_msg(msg, port, IPaddr):
 						keyfile=CLIENTKEYFILE)
 			ports.PlaneOBC_secure_socket.connect((IPaddr,port))
 			ports.PlaneOBC_secure_socket_is_connected = True
+			print("secure socket TO PlaneOBC has been opened")
 		ports.PlaneOBC_secure_socket.send(msg)
 	else:
+		if port == ports.outport_PlaneOBC:
+			print("forwarding message UNSECURED to PlaneOBC !!")
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.connect((IPaddr,port))
 		s.send(msg)

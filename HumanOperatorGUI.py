@@ -22,6 +22,7 @@ import threading, time
 from Networking import server_multiport
 ListenerToMissionDirectorServer = server_multiport.server()
 TryingToStartMissionDirectorServer = False
+ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP = ""
 
 def CallbackFromMissionDirector(data, FromIPaddr):
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
@@ -34,15 +35,23 @@ def CallbackFromMissionDirector(data, FromIPaddr):
 def ThreadedListenToMissionDirectorMainServer(ipaddr):
 	global ListenerToMissionDirectorServer
 	global TryingToStartMissionDirectorServer
+	global ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP
+	print("starting listener to MissionControl")
 	ports_and_callbacks = [(ports.outport_HumanOperator, CallbackFromMissionDirector, server_multiport.SSLSecurityDetails(False))]
 	ListenerToMissionDirectorServer.stop()
 	ListenerToMissionDirectorServer.start(ports_and_callbacks, ipaddr, False, False) # Start server in the background
-	time.sleep(1)
+	time.sleep(0.5)
 	if ListenerToMissionDirectorServer.CheckAllSocketsBound() == False:
 		TryingToStartMissionDirectorServer = False
+	else:
+		ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP = str(ipaddr)
 
 def StartListenerToMissionDirectorMainServer(ipaddr):
 	global TryingToStartMissionDirectorServer
+	global ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP
+	if len(ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP) > 0:
+		print("listener already started on IP \'"+ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP+"\'")
+		return
 	if TryingToStartMissionDirectorServer == False:
 		TryingToStartMissionDirectorServer = True
 		thread = threading.Thread(target=ThreadedListenToMissionDirectorMainServer, args=(ipaddr,))
@@ -63,7 +72,6 @@ def TryConvertStringToJSON(givenstring):
 def StartMyListenerToMissionControl():
 	myIPaddr = humanOpMyIPVar.get()
 	if len(myIPaddr) != 0:
-		print("starting listener to MissionControl")
 		StartListenerToMissionDirectorMainServer(myIPaddr)
 	else:
 		print("please enter this machine\'s static IP address")

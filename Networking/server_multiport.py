@@ -4,7 +4,7 @@
 #
 
 import select, socket, sys, time, threading
-import ssl
+import ssl, os
 
 class ThreadedListenSock:
 	def __init__(self, mythread, myportnum):
@@ -17,6 +17,7 @@ class ThreadedListenSock:
 class SSLSecurityDetails:
 	def __init__(self, boolarg):
 		self.secured = boolarg
+		self.cacerts = ""
 		self.certfile = ""
 		self.keyfile = ""
 
