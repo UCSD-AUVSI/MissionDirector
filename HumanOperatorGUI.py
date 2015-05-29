@@ -61,8 +61,8 @@ def CallbackFromMissionDirector(data, FromIPaddr):
 
 StatusClockUpdaterStarted = False
 StatusClockUpdaterLock = threading.Lock()
-StatusClockUpdaterTimeoutHideTime = 20
-StatusClockUpdaterGrayoutTime = 10
+StatusClockUpdaterTimeoutHideTime = 60
+StatusClockUpdaterGrayoutTime = 30
 
 def TryCastInt(ival):
 	try:
