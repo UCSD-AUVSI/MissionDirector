@@ -30,7 +30,76 @@ def CallbackFromMissionDirector(data, FromIPaddr):
 	cmd = json_data["cmd"]
 	args = json_data["args"]
 	if cmd == "status":
-		print("Status from "+args["from"]+": "+args["message"])
+		if "from" in args and args["from"] == "PlaneOBC":
+			argsmessage = args["message"]
+			argsmessagejson = json.loads(argsmessage)
+			if "cpu" in argsmessagejson:
+				cpuinfo = json.loads(argsmessagejson["cpu"])
+				def CompactifyRedundantList(lst):
+					retlst = []
+					for lval in lst:
+						if lval not in retlst:
+							retlst.append(lval)
+					return retlst
+				freqslist0 = CompactifyRedundantList(cpuinfo[1][0])
+				freqslist1 = CompactifyRedundantList(cpuinfo[1][1])
+				governors = CompactifyRedundantList(cpuinfo[1][2])
+				StatusClockUpdaterLock.acquire() #good multithreading practice
+				lastreceivedCPUtemp.set(str(cpuinfo[0]))
+				lastreceivedCPUtempTime.set("0")
+				lastreceivedCPUfreq.set(str(freqslist0)+" "+str(freqslist1)+" "+str(governors))
+				lastreceivedCPUfreqTime.set("0")
+				StatusClockUpdaterLock.release()
+			if "arduino" in argsmessagejson:
+				StatusClockUpdaterLock.acquire() #good multithreading practice
+				lastreceivedArduinoStatus.set(str(argsmessagejson["arduino"]))
+				lastreceivedArduinoStatusTime.set("0")
+				StatusClockUpdaterLock.release()
+			print("Status from "+args["from"]+": "+argsmessage)
+		else:
+				print("Status from MissionDirector: "+str(args))
+
+StatusClockUpdaterStarted = False
+StatusClockUpdaterLock = threading.Lock()
+StatusClockUpdaterTimeoutHideTime = 20
+StatusClockUpdaterGrayoutTime = 10
+
+def TryCastInt(ival):
+	try:
+		aaa = int(ival)
+		return True
+	except:
+		return False
+
+def UpdateAClockVar(var, var2data, varlabel, vartimelabel):
+	if TryCastInt(var.get()):
+		varint = int(var.get())
+		if varint < StatusClockUpdaterGrayoutTime:
+			var.set(str(varint+1))
+		elif StatusClockUpdaterTimeoutHideTime:
+			var.set(str(varint+1))
+			varlabel.config(foreground='#808080')
+			vartimelabel.config(foreground='#808080')
+		else:
+			var.set("")
+			var2data.set("")
+
+def ThreadLoopUpdateStatusClocks____():
+	StatusClockUpdaterStarted = True
+	print("StatusClockUpdater has been started!")
+	while True:
+		StatusClockUpdaterLock.acquire()
+		UpdateAClockVar(lastreceivedCPUtempTime, lastreceivedCPUtemp, lastreceivedCPUtempLabel, lastreceivedCPUtempTimeLabel)
+		UpdateAClockVar(lastreceivedCPUfreqTime, lastreceivedCPUfreq, lastreceivedCPUfreqLabel, lastreceivedCPUfreqTimeLabel)
+		UpdateAClockVar(lastreceivedArduinoStatusTime, lastreceivedArduinoStatus, lastreceivedArduinoStatusLabel, lastreceivedArduinoStatusTimeLabel)
+		StatusClockUpdaterLock.release()
+		time.sleep(1)
+
+def StartThreadedUpdateStatusClocks():
+	if StatusClockUpdaterStarted == False:
+		thread = threading.Thread(target=ThreadLoopUpdateStatusClocks____)
+		thread.daemon = True
+		thread.start()
 
 def ThreadedListenToMissionDirectorMainServer(ipaddr):
 	global ListenerToMissionDirectorServer
@@ -53,6 +122,7 @@ def StartListenerToMissionDirectorMainServer(ipaddr):
 		print("listener already started on IP \'"+ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP+"\'")
 		return
 	if TryingToStartMissionDirectorServer == False:
+		StartThreadedUpdateStatusClocks() #start this too
 		TryingToStartMissionDirectorServer = True
 		thread = threading.Thread(target=ThreadedListenToMissionDirectorMainServer, args=(ipaddr,))
 		thread.daemon = True
@@ -62,6 +132,14 @@ def StartListenerToMissionDirectorMainServer(ipaddr):
 #which is a window with a title bar and other decoration provided by window manager
 #root widget has to be created before any other widgets and can only be one root widget
 root = Tk()
+padamtX = 4
+padamtY = 8
+topframe = Frame(root, width=900, height=600)
+topframe.grid(row=0, column=0, padx=padamtX, pady=padamtY)
+middleFrame = Frame(root, width=900, height=600)
+middleFrame.grid(row=1, column=0, padx=padamtX, pady=padamtY)
+bottomframe = Frame(root, width=900, height=600)
+bottomframe.grid(row=2, column=0, padx=padamtX, pady=padamtY)
 
 def TryConvertStringToJSON(givenstring):
 	try:
@@ -122,11 +200,23 @@ def planeOBCSend():
 def arduinoQueryButtonAction():
 	remotemsg = {}
 	remotemsg["cmd"] = "status"
-	remotemsg["args"] = {"arduino":"arduino"}
+	remotemsg["args"] = {"arduino":"ask"}
 	fwdmsg = {}
 	fwdmsg["cmd"] = "planeobc:"
 	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
+
+def QueryCPUTempButtonAction():
+	remotemsg = {}
+	remotemsg["cmd"] = "status"
+	remotemsg["args"] = {"cpu":"ask"}
+	fwdmsg = {}
+	fwdmsg["cmd"] = "planeobc:"
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
+
+def QueryCPUFreqButtonAction():
+	QueryCPUTempButtonAction() #both pieces of info are packed into the same message
 
 def heimdallIPConnect():
 	#todo: update gui when a reply is received?
@@ -282,6 +372,13 @@ interoperabilityVarCMD = StringVar()
 interoperabilityVarARG = StringVar()
 gimbalAngleVar = StringVar()
 
+lastreceivedCPUfreq = StringVar()
+lastreceivedCPUtemp = StringVar()
+lastreceivedArduinoStatus = StringVar()
+lastreceivedCPUfreqTime = StringVar()
+lastreceivedCPUtempTime = StringVar()
+lastreceivedArduinoStatusTime = StringVar()
+
 #Name of panel
 root.title("UCSD AUVSI Mission Control Operator GUI")	
 root.protocol("WM_DELETE_WINDOW", handler)
@@ -292,120 +389,134 @@ BUTTONSCOLUMN = 3
 StatusCOLUMN = 4
 
 ##Headers
-systemTitle = Label(root, text = "System", font = "bold").grid(row = 0, column = 0)
+Label(topframe, text = "System", font = "bold").grid(row = 0, column = 0)
+Label(topframe, text = "cmd", font = "bold").grid(row = 0, column = 1)
+Label(topframe, text = "arg(s)", font = "bold").grid(row = 0, column = 2)
 
-systemTitle = Label(root, text = "cmd", font = "bold").grid(row = 0, column = 1)
-systemTitle = Label(root, text = "arg(s)", font = "bold").grid(row = 0, column = 2)
-
-#systemStatus = Label(root, text = "Status", width = 15, font = "bold").grid(row = 0, column = StatusCOLUMN)
+#systemStatus = Label(topframe, text = "Status", width = 15, font = "bold").grid(row = 0, column = StatusCOLUMN)
 #System Names
 rowiter = 1
-humanOpMyIP = Label(root, relief = RIDGE, text = "My HumanOperator IP", width = 18).grid(row= rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "My HumanOperator IP", width = 18).grid(row= rowiter, column = 0)
 rowiter += 1
-mDIPA = Label(root, relief = RIDGE, text = "MissionControl IP", width = 18).grid(row= rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "MissionControl IP", width = 18).grid(row= rowiter, column = 0)
 rowiter += 1
-missionDirector = Label(root, relief = RIDGE, text = "MissionControl", width = 18).grid(row=rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "MissionControl", width = 18).grid(row=rowiter, column = 0)
 rowiter += 1
-planeOBCIP = Label(root, relief = RIDGE, text = "PlaneOBC IP", width = 18).grid(row=rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "PlaneOBC IP", width = 18).grid(row=rowiter, column = 0)
 rowiter += 1
-planeOBC = Label(root, relief = RIDGE, text = "PlaneOBC", width = 18).grid(row=rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "PlaneOBC", width = 18).grid(row=rowiter, column = 0)
 rowiter += 1
-heimdallIP = Label(root, relief = RIDGE, text = "Heimdall IP", width = 18).grid(row=rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "Heimdall IP", width = 18).grid(row=rowiter, column = 0)
 rowiter += 1
-heimdall = Label(root, relief = RIDGE, text = "Heimdall", width = 18).grid(row=rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "Heimdall", width = 18).grid(row=rowiter, column = 0)
 rowiter += 1
-mavProxyIP = Label(root, relief = RIDGE, text = "MissonPlanner IP", width = 18).grid(row = rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "MissonPlanner IP", width = 18).grid(row = rowiter, column = 0)
 rowiter += 1
-mavProxy = Label(root, relief = RIDGE, text = "MissionPlanner", width = 18).grid(row = rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "MissionPlanner", width = 18).grid(row = rowiter, column = 0)
 rowiter += 1
-interoperabilityIP = Label(root, relief = RIDGE, text = "Interoperability URL", width = 18).grid(row = rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "Interoperability URL", width = 18).grid(row = rowiter, column = 0)
 rowiter += 1
-interoperability = Label(root, relief = RIDGE, text = "Interoperability", width = 18).grid(row = rowiter, column = 0)
+Label(topframe, relief = RIDGE, text = "Interoperability", width = 18).grid(row = rowiter, column = 0)
 
-#gimbalAngle = Label(root, relief = RIDGE, text = "Current Gimbal Angle", width = 18).grid(row = 10, column = 0)
+#gimbalAngle = Label(topframe, relief = RIDGE, text = "Current Gimbal Angle", width = 18).grid(row = 10, column = 0)
 
 """
 #Status Labels
-mDIPAStatus = Label(root, text = "Not connected", width = 30).grid(row=1, column = StatusCOLUMN)
-missionDirectorStatus = Label(root, text = "Default Status").grid(row=2, column = StatusCOLUMN)
-planeOBCIPStatus = Label(root, text = "Not connected").grid(row=3, column = StatusCOLUMN)
-planeOBCStatus = Label(root, text = "Default Status", width = 30).grid(row=4, column = StatusCOLUMN)
-heimdallIPStatus = Label(root, text = "Not connected").grid(row=5, column = StatusCOLUMN)
-heimdallStatus = Label(root, text = "Default Status").grid(row=6, column = StatusCOLUMN)
-mavProxyIPStatus = Label(root, text = "Not connected").grid(row=7, column = StatusCOLUMN)
-mavProxyStatus  = Label(root, text = "Default Status").grid(row=8, column = StatusCOLUMN)
-gimbalStatus = Label(root, text = "Default Status").grid(row = 9, column = StatusCOLUMN)
-flightStatus = Label(root, text = "Default Status").grid(row = 10, column = StatusCOLUMN)
-imagingStatus = Label(root, text = "Default Status").grid(row = 11, column = StatusCOLUMN)
-communicationStatus = Label(root, text = "Default Status").grid(row = 12, column = StatusCOLUMN)
+mDIPAStatus = Label(topframe, text = "Not connected", width = 30).grid(row=1, column = StatusCOLUMN)
+missionDirectorStatus = Label(topframe, text = "Default Status").grid(row=2, column = StatusCOLUMN)
+planeOBCIPStatus = Label(topframe, text = "Not connected").grid(row=3, column = StatusCOLUMN)
+planeOBCStatus = Label(topframe, text = "Default Status", width = 30).grid(row=4, column = StatusCOLUMN)
+heimdallIPStatus = Label(topframe, text = "Not connected").grid(row=5, column = StatusCOLUMN)
+heimdallStatus = Label(topframe, text = "Default Status").grid(row=6, column = StatusCOLUMN)
+mavProxyIPStatus = Label(topframe, text = "Not connected").grid(row=7, column = StatusCOLUMN)
+mavProxyStatus  = Label(topframe, text = "Default Status").grid(row=8, column = StatusCOLUMN)
+gimbalStatus = Label(topframe, text = "Default Status").grid(row = 9, column = StatusCOLUMN)
+flightStatus = Label(topframe, text = "Default Status").grid(row = 10, column = StatusCOLUMN)
+imagingStatus = Label(topframe, text = "Default Status").grid(row = 11, column = StatusCOLUMN)
+communicationStatus = Label(topframe, text = "Default Status").grid(row = 12, column = StatusCOLUMN)
 """
 
 #####Entry fields
 rowiter = 1
-humanOpMyIPEntry = Entry(root, width = 30, textvariable = humanOpMyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = humanOpMyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-mDIPAEntry = Entry(root, width = 30, textvariable = mDIPAVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = mDIPAVar).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-missionDirectorEntryCMD = Entry(root, width = 30, textvariable = missionDirectorVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
-missionDirectorEntryARG = Entry(root, width = 30, textvariable = missionDirectorVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = missionDirectorVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = missionDirectorVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-planeOBCIPEntry = Entry(root, width = 30, textvariable = planeOBCIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = planeOBCIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-planeOBCEntryCMD = Entry(root, width = 30, textvariable = planeOBCVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
-planeOBCEntryARG = Entry(root, width = 30, textvariable = planeOBCVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = planeOBCVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = planeOBCVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-heimdallIPEntry = Entry(root, width = 30, textvariable = heimdallIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = heimdallIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-heimdallEntryCMD = Entry(root, width = 30, textvariable = heimdallVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
-heimdallEntryARG = Entry(root, width = 30, textvariable = heimdallVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = heimdallVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = heimdallVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-mavProxyIPEntry = Entry(root, width = 30, textvariable = mavProxyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = mavProxyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-mavProxyEntryCMD = Entry(root, width = 30, textvariable = mavProxyVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
-mavProxyEntryARG = Entry(root, width = 30, textvariable = mavProxyVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = mavProxyVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = mavProxyVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-interoperabilityIPEntry = Entry(root, width = 30, textvariable = interoperabilityIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = interoperabilityIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
 rowiter += 1
-interoperabilityEntryCMD = Entry(root, width = 30, textvariable = interoperabilityVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
-interoperabilityEntryARG = Entry(root, width = 30, textvariable = interoperabilityVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = interoperabilityVarCMD).grid(row = rowiter, column = CommandEntryCOLUMN)
+Entry(topframe, width = 30, textvariable = interoperabilityVarARG).grid(row = rowiter, column = ArgEntryCOLUMN)
 
-#gimbalEntry = Entry(root, width = 30, text = gimbalAngleVar).grid(row = 9, column = CommandEntryCOLUMN)
+#Entry(topframe, width = 30, text = gimbalAngleVar).grid(row = 9, column = CommandEntryCOLUMN)
 
 #####Buttons
-connect11Button = Button(root, text = "Start", width = 5, command = StartMyListenerToMissionControl).grid(row = 1, column = BUTTONSCOLUMN)
-connect22Button = Button(root, text = "Connect", width = 5, command = missionDirectorIPConnect).grid(row = 2, column = BUTTONSCOLUMN)
-send22Button = Button(root, text = "Send", width = 5, command = missionDirectorSend).grid(row = 3, column = BUTTONSCOLUMN)
-connect33Button = Button(root, text = "Connect", width = 5, command = planeOBCIPConnect).grid(row = 4, column = BUTTONSCOLUMN)
-send33Button = Button(root, text = "Send", width = 5, command = planeOBCSend).grid(row = 5, column = BUTTONSCOLUMN)
-connect44Button = Button(root, text = "Connect", width = 5, command = heimdallIPConnect).grid(row = 6, column = BUTTONSCOLUMN)
-send44Button = Button(root, text = "Send", width = 5, command = heimdallSend).grid(row = 7, column = BUTTONSCOLUMN)
-connect55Button = Button(root, text = "Connect", width =5, command = mavProxyIPConnect).grid(row = 8, column = BUTTONSCOLUMN)
-send55Button = Button(root, text = "Send", width= 5, command = mavProxySend).grid(row = 9, column = BUTTONSCOLUMN)
-connect66Button = Button(root, text = "Connect", width =5, command = interoperabilityIPConnect).grid(row = 10, column = BUTTONSCOLUMN)
-send66Button = Button(root, text = "Send", width= 5, command = interoperabilitySend).grid(row = 11, column = BUTTONSCOLUMN)
+Button(topframe, text = "Start", width = 5, command = StartMyListenerToMissionControl).grid(row = 1, column = BUTTONSCOLUMN)
+Button(topframe, text = "Connect", width = 5, command = missionDirectorIPConnect).grid(row = 2, column = BUTTONSCOLUMN)
+Button(topframe, text = "Send", width = 5, command = missionDirectorSend).grid(row = 3, column = BUTTONSCOLUMN)
+Button(topframe, text = "Connect", width = 5, command = planeOBCIPConnect).grid(row = 4, column = BUTTONSCOLUMN)
+Button(topframe, text = "Send", width = 5, command = planeOBCSend).grid(row = 5, column = BUTTONSCOLUMN)
+Button(topframe, text = "Connect", width = 5, command = heimdallIPConnect).grid(row = 6, column = BUTTONSCOLUMN)
+Button(topframe, text = "Send", width = 5, command = heimdallSend).grid(row = 7, column = BUTTONSCOLUMN)
+Button(topframe, text = "Connect", width =5, command = mavProxyIPConnect).grid(row = 8, column = BUTTONSCOLUMN)
+Button(topframe, text = "Send", width= 5, command = mavProxySend).grid(row = 9, column = BUTTONSCOLUMN)
+Button(topframe, text = "Connect", width =5, command = interoperabilityIPConnect).grid(row = 10, column = BUTTONSCOLUMN)
+Button(topframe, text = "Send", width= 5, command = interoperabilitySend).grid(row = 11, column = BUTTONSCOLUMN)
 
-#send7Button = Button(root, text = "Set", width = 5, command = currentGimbalAngleSet).grid(row = 9, column = BUTTONSCOLUMN)
+#Button(topframe, text = "Set", width = 5, command = currentGimbalAngleSet).grid(row = 9, column = BUTTONSCOLUMN)
 
-send7Buttonblanklabel = Label(root, text = " ", font = "bold").grid(row = 11, column = BUTTONSCOLUMN)
+Label(topframe, text = " ", font = "bold").grid(row = 11, column = BUTTONSCOLUMN)
 
-"""beginMissionButton = Button(root, text = "Begin Mission", width = 15, 
+"""beginMissionButton = Button(topframe, text = "Begin Mission", width = 15, 
 	command = confirmBeginMission).grid(row = 10, column = 0)
-endMissionButton = Button(root, text = "End Mission", width = 15, 
+endMissionButton = Button(topframe, text = "End Mission", width = 15, 
 	command = confirmEndMission).grid(row = 10, column = 1)
 """
-startImagingButton = Button(root, text = "Start imaging", width = 15, 
-	command = confirmBeginImaging).grid(row = 12, column = 0)
-stopImagingButton = Button(root, text = "Stop imaging", width = 18, 
-	command = confirmStopImaging).grid(row = 12, column = 1)
-sendImagesButton = Button(root, text = "Save ADLC targets", width = 15, 
-	command = confirmSendImagesToJudges).grid(row = 13, column = 0)
-getReimageWaypointsButton = Button(root, text = "Get re-image waypoints", width = 18, 
-	command = confirmGetReimagingWayPoints).grid(row = 13, column = 1)
+Button(middleFrame, text = "Start imaging", width = 15, command = confirmBeginImaging).grid(row = 12, column = 0)
+Button(middleFrame, text = "Stop imaging", width = 18, command = confirmStopImaging).grid(row = 12, column = 1)
+Button(middleFrame, text = "Save ADLC targets", width = 15, command = confirmSendImagesToJudges).grid(row = 13, column = 0)
+Button(middleFrame, text = "Get re-image waypoints", width = 18, command = confirmGetReimagingWayPoints).grid(row = 13, column = 1)
+Button(middleFrame, text = "Query OB Arduino Status", width = 20, command = arduinoQueryButtonAction).grid(row = 12, column = 2)
+Button(middleFrame, text = "Query OB Gimbal Status", width = 20, command = arduinoQueryButtonAction).grid(row = 13, column = 2)
+Button(middleFrame, text = "Query OB CPU Temperature", width = 20, command = QueryCPUTempButtonAction).grid(row = 12, column = 3)
+Button(middleFrame, text = "Query OB CPU Frequency", width = 20, command = QueryCPUFreqButtonAction).grid(row = 13, column = 3)
 
-arduinoQueryButton = Button(root, text = "Query OB Arduino Status", width = 20, 
-	command = arduinoQueryButtonAction).grid(row = 12, column = 2)
-arduinoQueryButton = Button(root, text = "Query OB Gimbal Status", width = 20, 
-	command = arduinoQueryButtonAction).grid(row = 13, column = 2)
+#==========================================================================================================
+
+Label(bottomframe, relief = RIDGE, text = "CPU TEMP", width = 10).grid(row=0, column=0)
+lastreceivedCPUtempTimeLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUtempTime, width = 10)
+lastreceivedCPUtempTimeLabel.grid(row=0, column=1)
+lastreceivedCPUtempLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUtemp, width = 60)
+lastreceivedCPUtempLabel.grid(row=0, column=2)
+
+Label(bottomframe, relief = RIDGE, text = "CPU FREQ", width = 10).grid(row=1, column=0)
+lastreceivedCPUfreqTimeLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUfreqTime, width = 10)
+lastreceivedCPUfreqTimeLabel.grid(row=1, column=1)
+lastreceivedCPUfreqLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUfreq, width = 60)
+lastreceivedCPUfreqLabel.grid(row=1, column=2)
+
+Label(bottomframe, relief = RIDGE, text = "ARDUINO", width = 10).grid(row=2, column=0)
+lastreceivedArduinoStatusTimeLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedArduinoStatusTime, width = 10)
+lastreceivedArduinoStatusTimeLabel.grid(row=2, column=1)
+lastreceivedArduinoStatusLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedArduinoStatus, width = 60)
+lastreceivedArduinoStatusLabel.grid(row=2, column=2)
 
 root.mainloop(), 
 
