@@ -7,8 +7,8 @@ TODO: color status?
 TODO: Flight time?
 TODO: Graphic image of the gimbal angle
 TODO: Status labels that change properly
-
 """
+
 #using Tkinter so anyone with Python installed can run it immediately
 from Tkinter import * 
 import tkMessageBox
@@ -23,6 +23,18 @@ from Networking import server_multiport
 ListenerToMissionDirectorServer = server_multiport.server()
 TryingToStartMissionDirectorServer = False
 ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP = ""
+
+
+class InfoStatusLabel(object):
+	def __init__(self, name, row):
+		self.lastTime = StringVar()
+		self.lastStatus = StringVar()
+		Label(bottomframe, relief = RIDGE, text = name, width = 10).grid(row=row, column=0)
+		self.time = Label(bottomframe, relief = RIDGE, textvariable = self.lastTime, width = 10)
+		self.time.grid(row=row, column=1)
+		self.info = Label(bottomframe, relief = RIDGE, textvariable = self.lastStatus, width = 60)
+		self.info.grid(row=row, column=2)
+
 
 def CallbackFromMissionDirector(data, FromIPaddr):
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
@@ -45,19 +57,36 @@ def CallbackFromMissionDirector(data, FromIPaddr):
 				freqslist1 = CompactifyRedundantList(cpuinfo[1][1])
 				governors = CompactifyRedundantList(cpuinfo[1][2])
 				StatusClockUpdaterLock.acquire() #good multithreading practice
-				lastreceivedCPUtemp.set(str(cpuinfo[0]))
-				lastreceivedCPUtempTime.set("0")
-				lastreceivedCPUfreq.set(str(freqslist0)+" "+str(freqslist1)+" "+str(governors))
-				lastreceivedCPUfreqTime.set("0")
+				AllLabelsDict["CPUtemp"].lastStatus.set(str(cpuinfo[0]))
+				AllLabelsDict["CPUtemp"].lastTime.set("0")
+				AllLabelsDict["CPUfreq"].lastStatus.set(str(freqslist0)+" "+str(freqslist1)+" "+str(governors))
+				AllLabelsDict["CPUfreq"].lastTime.set("0")
 				StatusClockUpdaterLock.release()
 			if "arduino" in argsmessagejson:
 				StatusClockUpdaterLock.acquire() #good multithreading practice
-				lastreceivedArduinoStatus.set(str(argsmessagejson["arduino"]))
-				lastreceivedArduinoStatusTime.set("0")
+				AllLabelsDict["Arduino"].lastStatus.set(str(argsmessagejson["arduino"]))
+				AllLabelsDict["Arduino"].lastTime.set("0")
+				StatusClockUpdaterLock.release()
+			if "DSLR" in argsmessagejson:
+				StatusClockUpdaterLock.acquire() #good multithreading practice
+				AllLabelsDict["DSLR"].lastStatus.set(str(argsmessagejson["DSLR"]))
+				AllLabelsDict["DSLR"].lastTime.set("0")
+				StatusClockUpdaterLock.release()
+			if "telem" in argsmessagejson:
+				StatusClockUpdaterLock.acquire() #good multithreading practice
+				AllLabelsDict["telem"].lastStatus.set(str(argsmessagejson["telem"]))
+				AllLabelsDict["telem"].lastTime.set("0")
 				StatusClockUpdaterLock.release()
 			print("Status from "+args["from"]+": "+argsmessage)
 		else:
 				print("Status from MissionDirector: "+str(args))
+
+AllLabelsDict = {}
+AllLabelsDict["CPUtemp"] = InfoStatusLabel("CPU TEMP",0)
+AllLabelsDict["CPUfreq"] = InfoStatusLabel("CPU FREQ",1)
+AllLabelsDict["Arduino"] = InfoStatusLabel("Arduino",2)
+AllLabelsDict["DSLR"] = InfoStatusLabel("DSLR",3)
+AllLabelsDict["telem"] = InfoStatusLabel("telem",4)
 
 StatusClockUpdaterStarted = False
 StatusClockUpdaterLock = threading.Lock()
@@ -89,9 +118,8 @@ def ThreadLoopUpdateStatusClocks____():
 	print("StatusClockUpdater has been started!")
 	while True:
 		StatusClockUpdaterLock.acquire()
-		UpdateAClockVar(lastreceivedCPUtempTime, lastreceivedCPUtemp, lastreceivedCPUtempLabel, lastreceivedCPUtempTimeLabel)
-		UpdateAClockVar(lastreceivedCPUfreqTime, lastreceivedCPUfreq, lastreceivedCPUfreqLabel, lastreceivedCPUfreqTimeLabel)
-		UpdateAClockVar(lastreceivedArduinoStatusTime, lastreceivedArduinoStatus, lastreceivedArduinoStatusLabel, lastreceivedArduinoStatusTimeLabel)
+		for labell in AllLabelsDict:
+			UpdateAClockVar(labell)
 		StatusClockUpdaterLock.release()
 		time.sleep(1)
 
@@ -372,12 +400,6 @@ interoperabilityVarCMD = StringVar()
 interoperabilityVarARG = StringVar()
 gimbalAngleVar = StringVar()
 
-lastreceivedCPUfreq = StringVar()
-lastreceivedCPUtemp = StringVar()
-lastreceivedArduinoStatus = StringVar()
-lastreceivedCPUfreqTime = StringVar()
-lastreceivedCPUtempTime = StringVar()
-lastreceivedArduinoStatusTime = StringVar()
 
 #Name of panel
 root.title("UCSD AUVSI Mission Control Operator GUI")	
@@ -500,25 +522,8 @@ Button(middleFrame, text = "Query OB CPU Frequency", width = 20, command = Query
 
 #==========================================================================================================
 
-Label(bottomframe, relief = RIDGE, text = "CPU TEMP", width = 10).grid(row=0, column=0)
-lastreceivedCPUtempTimeLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUtempTime, width = 10)
-lastreceivedCPUtempTimeLabel.grid(row=0, column=1)
-lastreceivedCPUtempLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUtemp, width = 60)
-lastreceivedCPUtempLabel.grid(row=0, column=2)
 
-Label(bottomframe, relief = RIDGE, text = "CPU FREQ", width = 10).grid(row=1, column=0)
-lastreceivedCPUfreqTimeLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUfreqTime, width = 10)
-lastreceivedCPUfreqTimeLabel.grid(row=1, column=1)
-lastreceivedCPUfreqLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedCPUfreq, width = 60)
-lastreceivedCPUfreqLabel.grid(row=1, column=2)
-
-Label(bottomframe, relief = RIDGE, text = "ARDUINO", width = 10).grid(row=2, column=0)
-lastreceivedArduinoStatusTimeLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedArduinoStatusTime, width = 10)
-lastreceivedArduinoStatusTimeLabel.grid(row=2, column=1)
-lastreceivedArduinoStatusLabel = Label(bottomframe, relief = RIDGE, textvariable = lastreceivedArduinoStatus, width = 60)
-lastreceivedArduinoStatusLabel.grid(row=2, column=2)
-
-root.mainloop(), 
+root.mainloop(),
 
 
 
