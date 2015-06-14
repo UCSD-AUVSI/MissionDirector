@@ -13,6 +13,19 @@ TODO: Status labels that change properly
 from Tkinter import * 
 import tkMessageBox
 
+#To initialize Tkinter, need to create a Tk root widget, 
+#which is a window with a title bar and other decoration provided by window manager
+#root widget has to be created before any other widgets and can only be one root widget
+root = Tk()
+padamtX = 4
+padamtY = 8
+topframe = Frame(root, width=900, height=600)
+topframe.grid(row=0, column=0, padx=padamtX, pady=padamtY)
+middleFrame = Frame(root, width=900, height=600)
+middleFrame.grid(row=1, column=0, padx=padamtX, pady=padamtY)
+bottomframe = Frame(root, width=900, height=600)
+bottomframe.grid(row=2, column=0, padx=padamtX, pady=padamtY)
+
 
 # import MissionDirector networking stuff
 from Networking.send_message_to_client import send_message_to_client
@@ -91,7 +104,8 @@ AllLabelsDict["telem"] = InfoStatusLabel("telem",4)
 StatusClockUpdaterStarted = False
 StatusClockUpdaterLock = threading.Lock()
 StatusClockUpdaterTimeoutHideTime = 60
-StatusClockUpdaterGrayoutTime = 30
+StatusClockUpdaterGrayoutTime22 = 40
+StatusClockUpdaterGrayoutTime = 20
 
 def TryCastInt(ival):
 	try:
@@ -105,10 +119,16 @@ def UpdateAClockVar(var, var2data, varlabel, vartimelabel):
 		varint = int(var.get())
 		if varint < StatusClockUpdaterGrayoutTime:
 			var.set(str(varint+1))
-		elif StatusClockUpdaterTimeoutHideTime:
+			varlabel.config(foreground='#000000')
+			vartimelabel.config(foreground='#000000')
+		elif varint < StatusClockUpdaterGrayoutTime22:
 			var.set(str(varint+1))
-			varlabel.config(foreground='#808080')
-			vartimelabel.config(foreground='#808080')
+			varlabel.config(foreground='#424242')
+			vartimelabel.config(foreground='#424242')
+		elif varint < StatusClockUpdaterTimeoutHideTime:
+			var.set(str(varint+1))
+			varlabel.config(foreground='#898989')
+			vartimelabel.config(foreground='#898989')
 		else:
 			var.set("")
 			var2data.set("")
@@ -155,19 +175,6 @@ def StartListenerToMissionDirectorMainServer(ipaddr):
 		thread = threading.Thread(target=ThreadedListenToMissionDirectorMainServer, args=(ipaddr,))
 		thread.daemon = True
 		thread.start()
-
-#To initialize Tkinter, need to create a Tk root widget, 
-#which is a window with a title bar and other decoration provided by window manager
-#root widget has to be created before any other widgets and can only be one root widget
-root = Tk()
-padamtX = 4
-padamtY = 8
-topframe = Frame(root, width=900, height=600)
-topframe.grid(row=0, column=0, padx=padamtX, pady=padamtY)
-middleFrame = Frame(root, width=900, height=600)
-middleFrame.grid(row=1, column=0, padx=padamtX, pady=padamtY)
-bottomframe = Frame(root, width=900, height=600)
-bottomframe.grid(row=2, column=0, padx=padamtX, pady=padamtY)
 
 def TryConvertStringToJSON(givenstring):
 	try:
@@ -245,6 +252,15 @@ def QueryCPUTempButtonAction():
 
 def QueryCPUFreqButtonAction():
 	QueryCPUTempButtonAction() #both pieces of info are packed into the same message
+
+def LaunchHeimdallButtonAction():
+	remotemsg = {}
+	remotemsg["cmd"] = "start-heimdall"
+	remotemsg["args"] = {"a":"a"}
+	fwdmsg = {}
+	fwdmsg["cmd"] = "planeobc:"
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
 def heimdallIPConnect():
 	#todo: update gui when a reply is received?
@@ -504,7 +520,6 @@ Button(topframe, text = "Send", width= 5, command = interoperabilitySend).grid(r
 
 #Button(topframe, text = "Set", width = 5, command = currentGimbalAngleSet).grid(row = 9, column = BUTTONSCOLUMN)
 
-Label(topframe, text = " ", font = "bold").grid(row = 11, column = BUTTONSCOLUMN)
 
 """beginMissionButton = Button(topframe, text = "Begin Mission", width = 15, 
 	command = confirmBeginMission).grid(row = 10, column = 0)
@@ -519,6 +534,8 @@ Button(middleFrame, text = "Query OB Arduino Status", width = 20, command = ardu
 Button(middleFrame, text = "Query OB Gimbal Status", width = 20, command = arduinoQueryButtonAction).grid(row = 13, column = 2)
 Button(middleFrame, text = "Query OB CPU Temperature", width = 20, command = QueryCPUTempButtonAction).grid(row = 12, column = 3)
 Button(middleFrame, text = "Query OB CPU Frequency", width = 20, command = QueryCPUFreqButtonAction).grid(row = 13, column = 3)
+
+Button(middleFrame, text = "Launch OBC Heimdall", width = 20, command = LaunchHeimdallButtonAction).grid(row = 14, column = 0)
 
 #==========================================================================================================
 

@@ -12,7 +12,7 @@ from interoperability import globalvar_connection_interop as InterOP
 # main(): setup and start server
 #
 def main(argv):
-
+	
 	if len(argv) < 1:
 		print("usage:  {ip-address-for-listen}  {optional:use-insecure-comms?}")
 		quit()
@@ -21,13 +21,16 @@ def main(argv):
 	InterOP.connection.threadedconnect()
 	#start the sending of data
 	InterOP.connection.start_interop()
-
-	sslcertsfolder = "/home/auvsi/AUVSI/sslcerts/"
+	
+	sslcertsfolder = ""
+	if len(argv) >= 3:
+		sslcertsfolder = argv[2]
+		print("SSL certs will be loaded from \'"+sslcertsfolder+"\'")
 	ports.PlaneOBC_listeningssldetails = server_multiport.SSLSecurityDetails(True)
 	ports.PlaneOBC_listeningssldetails.cacerts = sslcertsfolder+"nobs-auvsi-cert-server.crt"
 	ports.PlaneOBC_listeningssldetails.certfile = sslcertsfolder+"MDclientJason.crt"
 	ports.PlaneOBC_listeningssldetails.keyfile = sslcertsfolder+"MDclientJason.key.nopass"
-
+	
 	# Setup several parallel listeners
 	ports_and_callbacks = []
 	ports_and_callbacks.append((ports.listenport_MAVProxy, listener_MAVProxy.callback, server_multiport.SSLSecurityDetails(False)))
@@ -44,7 +47,7 @@ def main(argv):
 		except:
 			print("something happened, when asking for insecure comms just use an integer 0 or 1")
 	ports_and_callbacks.append((ports.listenport_PlaneOBC, listener_PlaneOBC.callback, ports.PlaneOBC_listeningssldetails))
-
+	
 	# Start server and wait here for keyboard interrupt, and keep trying to start connections
 	s = server_multiport.server()
 	s.start(ports_and_callbacks, argv[0], True, True)
@@ -55,3 +58,4 @@ def main(argv):
 #
 if __name__ == "__main__":
 	main(sys.argv[1:])
+
