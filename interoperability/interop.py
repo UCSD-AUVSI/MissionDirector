@@ -105,7 +105,7 @@ class InterOp:
                     self.doLogin()
                 return True
             else:
-                print "Login: "+str(login)+str(c)+str(count)
+                print "Interop server login: "+str(login)+str(c)+str(count)
                 time.sleep(1)
 
     def commandLoop(self):
