@@ -45,6 +45,8 @@ def TryCastInt(ival):
 		return False
 
 class ConnectionStatusLabel(object):
+	def GetDefaultColor(self):
+		return '#505050'
 	def __init__(self, initialstr, row):
 		self.strVar = StringVar()
 		self.strVar.set(initialstr)
@@ -87,6 +89,7 @@ AllLabelsDict["CPUfreq"] = InfoStatusLabel("CPU FREQ",1)
 AllLabelsDict["Arduino"] = InfoStatusLabel("Arduino",2)
 AllLabelsDict["DSLR"] = InfoStatusLabel("DSLR",3)
 AllLabelsDict["telem"] = InfoStatusLabel("telem",4)
+AllLabelsDict["OBC-Heimdall"] = InfoStatusLabel("OBC-Heimdall",5)
 
 def CallbackFromMissionDirector(data, FromIPaddr):
 	# this needs to be a common interface between all UCSD AUVSI software parts: MissionDirector, Heimdall, NewOnboardSuite, etc.
@@ -131,6 +134,15 @@ def CallbackFromMissionDirector(data, FromIPaddr):
 				StatusClockUpdaterLock.acquire() #good multithreading practice
 				AllLabelsDict["telem"].lastStatus.set(str(argsmessagejson["telem"]))
 				AllLabelsDict["telem"].lastTime.set("0")
+				StatusClockUpdaterLock.release()
+			if "OBC-Heimdall" in argsmessagejson:
+				StatusClockUpdaterLock.acquire() #good multithreading practice
+				for kkey in AllLabelsDict:
+					print("             "+str(kkey))
+					if "OBC-Heimdall" == kkey:
+						print("                  "+"found key")
+				AllLabelsDict["OBC-Heimdall"].lastStatus.set(str(argsmessagejson["OBC-Heimdall"]))
+				AllLabelsDict["OBC-Heimdall"].lastTime.set("0")
 				StatusClockUpdaterLock.release()
 			if "hello" in argsmessagejson and "reply" in argsmessagejson["hello"]:
 				OutboundToPlaneOBCInfoLabel.strVar.set("Connected to \'"+str(FromIPaddr)+"\'")
@@ -207,6 +219,11 @@ def StartMyListenerToMissionControl():
 		print("please enter this machine\'s static IP address")
 
 def missionDirectorIPConnect():
+	if len(ListenerToMissionDIrectorServerAlreadyStartedAndThisIsItsIP) == 0:
+		print("need to start my humanop listener first")
+		ListenerToMissionControlInfoLabel.strVar.set("start me first! not connected")
+		ListenerToMissionControlInfoLabel.MyLabel.config(foreground=ListenerToMissionControlInfoLabel.GetDefaultColor())
+		return
 	MDipaddr = mDIPAVar.get()
 	if len(MDipaddr) != 0:
 		hellomsg = {}
@@ -272,7 +289,19 @@ def QueryCPUFreqButtonAction():
 	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
-def LaunchHeimdallButtonAction():
+def QueryOBCHeimdallButtonAction():
+	remotemsg = {"cmd":"status", "args":{"OBC-Heimdall":"ask"}}
+	fwdmsg = {"cmd":"planeobc:"}
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
+
+def KillOBCHeimdallButtonAction():
+	remotemsg = {"cmd":"kill-heimdall", "args":{}}
+	fwdmsg = {"cmd":"planeobc:"}
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
+
+def LaunchOBCHeimdallButtonAction():
 	remotemsg = {"cmd":"start-heimdall", "args":{}}
 	fwdmsg = {"cmd":"planeobc:"}
 	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
@@ -468,22 +497,6 @@ Label(topframe, relief = FLAT, text = "Interoperability", width = 18).grid(row =
 
 #gimbalAngle = Label(topframe, relief = RIDGE, text = "Current Gimbal Angle", width = 18).grid(row = 10, column = 0)
 
-"""
-#Status Labels
-mDIPAStatus = Label(topframe, text = "Not connected", width = 30).grid(row=1, column = StatusCOLUMN)
-missionDirectorStatus = Label(topframe, text = "Default Status").grid(row=2, column = StatusCOLUMN)
-planeOBCIPStatus = Label(topframe, text = "Not connected").grid(row=3, column = StatusCOLUMN)
-planeOBCStatus = Label(topframe, text = "Default Status", width = 30).grid(row=4, column = StatusCOLUMN)
-heimdallIPStatus = Label(topframe, text = "Not connected").grid(row=5, column = StatusCOLUMN)
-heimdallStatus = Label(topframe, text = "Default Status").grid(row=6, column = StatusCOLUMN)
-mavProxyIPStatus = Label(topframe, text = "Not connected").grid(row=7, column = StatusCOLUMN)
-mavProxyStatus  = Label(topframe, text = "Default Status").grid(row=8, column = StatusCOLUMN)
-gimbalStatus = Label(topframe, text = "Default Status").grid(row = 9, column = StatusCOLUMN)
-flightStatus = Label(topframe, text = "Default Status").grid(row = 10, column = StatusCOLUMN)
-imagingStatus = Label(topframe, text = "Default Status").grid(row = 11, column = StatusCOLUMN)
-communicationStatus = Label(topframe, text = "Default Status").grid(row = 12, column = StatusCOLUMN)
-"""
-
 #####Entry fields
 rowiter = 1
 Entry(topframe, width = 30, textvariable = humanOpMyIPVar).grid(row = rowiter, column = ArgEntryCOLUMN)
@@ -553,10 +566,13 @@ Button(middleFrame, text = "Query OB Telem. USB", width = 20, command = queryTel
 
 #Button(middleFrame, text = "Query OB Gimbal: todo", width = 20, command = arduinoQueryButtonAction).grid(row = 13, column = 2)
 
-Button(middleFrame, text = "Query OB CPU Temperature", width = 20, command = QueryCPUTempButtonAction).grid(row = 12, column = 3)
-Button(middleFrame, text = "Query OB CPU Frequency", width = 20, command = QueryCPUFreqButtonAction).grid(row = 13, column = 3)
+Button(middleFrame, text = "Query OBC CPU Temperature", width = 20, command = QueryCPUTempButtonAction).grid(row = 12, column = 3)
+Button(middleFrame, text = "Query OBC CPU Frequency", width = 20, command = QueryCPUFreqButtonAction).grid(row = 13, column = 3)
 
-Button(middleFrame, text = "Launch OBC Heimdall", width = 16, command = LaunchHeimdallButtonAction).grid(row = 14, column = 0)
+Button(middleFrame, text = "Query OBC Heimdall", width = 20, command = QueryOBCHeimdallButtonAction).grid(row = 15, column = 3)
+
+Button(middleFrame, text = "Launch OBC Heimdall", width = 16, command = LaunchOBCHeimdallButtonAction).grid(row = 15, column = 0)
+Button(middleFrame, text = "Kill OBC Heimdall", width = 16, command = KillOBCHeimdallButtonAction).grid(row = 15, column = 1)
 
 #==========================================================================================================
 
