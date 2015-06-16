@@ -295,6 +295,12 @@ def QueryOBCHeimdallButtonAction():
 	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 
+def DisconnectArduinoButtonAction():
+	remotemsg = {"cmd":"arduino", "args":{"disconnect":" "}}
+	fwdmsg = {"cmd":"planeobc:"}
+	fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
+	send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
+
 def KillOBCHeimdallButtonAction():
 	remotemsg = {"cmd":"kill-heimdall", "args":{}}
 	fwdmsg = {"cmd":"planeobc:"}
@@ -386,12 +392,8 @@ def confirmBeginImaging():
 	result = tkMessageBox.askquestion("Begin Imaging?", "Please confirm that you with to begin imaging")
 	if result == 'yes':
 		print "Beginning imaging..."
-		#put method calls here
-		remotemsg = {}
-		remotemsg["cmd"] = "imaging"
-		remotemsg["args"] = {"start":" "}
-		fwdmsg = {}
-		fwdmsg["cmd"] = "planeobc:"
+		remotemsg = {"cmd":"imaging","args":{"start":" "}}
+		fwdmsg = {"cmd":"planeobc:"}
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 	else:
@@ -401,12 +403,8 @@ def confirmStopImaging():
 	result = tkMessageBox.askquestion("Stop Imaging?", "Please confirm that you with to end imaging")
 	if result == 'yes':
 		print "Stopping imaging"
-		#put method calls here
-		remotemsg = {}
-		remotemsg["cmd"] = "imaging"
-		remotemsg["args"] = {"stop":" "}
-		fwdmsg = {}
-		fwdmsg["cmd"] = "planeobc:"
+		remotemsg = {"cmd":"imaging", "args":{"stop":" "}}
+		fwdmsg = {"cmd":"planeobc:"}
 		fwdmsg["args"] = {"message":json.dumps(remotemsg),"ip":planeOBCIPVar.get()}
 		send_message_to_client(json.dumps(fwdmsg), ports.listenport_HumanOperator, mDIPAVar.get())
 	else:
@@ -573,6 +571,8 @@ Button(middleFrame, text = "Query OBC Heimdall", width = 20, command = QueryOBCH
 
 Button(middleFrame, text = "Launch OBC Heimdall", width = 16, command = LaunchOBCHeimdallButtonAction).grid(row = 15, column = 0)
 Button(middleFrame, text = "Kill OBC Heimdall", width = 16, command = KillOBCHeimdallButtonAction).grid(row = 15, column = 1)
+
+Button(middleFrame, text = "Disconnect Arduino", width = 16, command = DisconnectArduinoButtonAction).grid(row = 16, column = 0)
 
 #==========================================================================================================
 
