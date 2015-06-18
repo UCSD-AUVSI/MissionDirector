@@ -13,8 +13,8 @@ from interoperability import globalvar_connection_interop as InterOP
 #
 def main(argv):
 	
-	if len(argv) < 1:
-		print("usage:  {ip-address-for-listen}  {optional:use-insecure-comms?}")
+	if len(argv) < 3:
+		print("usage:  {ip-address-for-listen}  {optional:use-insecure-comms?}  {ssl-certs-folder}")
 		quit()
 
 	#start interop connection
