@@ -91,11 +91,15 @@ class InterOp:
 
 
     def doLogin(self):
+        print "go"
         count = 0
         while self.login_required == 1:
+            print "while"
             count+=1
             login,c = self.login()
+            print login
             if self.stop == True:
+                print "done"
                 return
             if self.login_required==0:
                 serverd,mssg = self.serverInfo()
@@ -112,14 +116,16 @@ class InterOp:
         # login
         # STAGES
         try:
+            print "start"
             self.doLogin()
 
             # we are logged in
             self.gpsThread = threading.Thread(target=self.doSendGPS)
             self.gpsThread.start()
-
+            print "gpsThread go"
             self.obstacleThread = threading.Thread(target=self.doGetObstacles)
             self.obstacleThread.start()
+            print "bostacle thread go"
             while True:
                 if self.login_required == 1:
                     print "Login needed"
@@ -131,6 +137,7 @@ class InterOp:
             self.stop = True
 
     def thread_loop(self):
+        print "start of thread_loop"
         while True:
             if self.start == 1:
                 self.commandLoop()
@@ -140,7 +147,11 @@ class InterOp:
                 self.stop = True
                 self.end = 0
                 self.active = 0
-            time.sleep(.5)
+            print self.start
+            print "thread loop"
+            print self.active
+            print
+        time.sleep(.5)
 
     def start_interop(self):
         if self.active == 0:
@@ -150,8 +161,9 @@ class InterOp:
             self.end = 1
 
     def update_gps(self, gps):
+        #self.gps_data = {"latitude":50.1,"longitude":50.1,"altitude_msl":100.0,"uas_heading":22.35} this format of gps data
         self.gps_data = gps
-
+	
     def doSendGPS(self):
         print "SendGPS Thread start"
         start = time.time()
@@ -173,7 +185,7 @@ class InterOp:
 
             count = count +1
             #time.sleep(.03)
-            if count%100 == 0:
+            if count%10 == 0:
                 curr = time.time()
                 split = curr - lastsplit
                 lastsplit = curr
@@ -193,9 +205,29 @@ class InterOp:
                     self.login_required = 1
                 print "GetObstacles Thread end"
                 return
-
+            print mssg
 
             count = count +1
-            if count%10 == 0:
+            if count%1000 == 0:
                 print "gotObstacles: "+str(count)
-            time.sleep(.2)
+            #time.sleep(.2)
+    def doServerInfo(self):
+        count = 0
+        print "ServerInfo Thread start"
+        while True:
+            if self.login_required == 1 or self.stop == True:
+                print "ServerInfo Thread end"
+                return
+            code, mssg = self.serverInfo()
+            if code == 400 or code == -400:
+                print "restart"
+                if self.login_required == 0:
+                    self.login_required = 1
+                print "ServerInfo Thread end"
+                return
+            print mssg
+
+            count = count +1
+            if count%1000 == 0:
+                print "serverInfo: "+str(count)
+            #time.sleep(.2)
